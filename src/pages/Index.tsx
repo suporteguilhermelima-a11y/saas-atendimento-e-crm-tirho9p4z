@@ -1,15 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import {
-  Area,
-  AreaChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-} from 'recharts'
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart'
 import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   MessageSquare,
   Users,
@@ -19,14 +12,14 @@ import {
   CalendarDays,
 } from 'lucide-react'
 
-const chartData = [
-  { date: '01/10', triagens: 40, consultas: 24 },
-  { date: '02/10', triagens: 30, consultas: 13 },
-  { date: '03/10', triagens: 20, consultas: 18 },
-  { date: '04/10', triagens: 27, consultas: 39 },
-  { date: '05/10', triagens: 18, consultas: 28 },
-  { date: '06/10', triagens: 23, consultas: 38 },
-  { date: '07/10', triagens: 34, consultas: 43 },
+const conversionChartData = [
+  { date: '10/10', triagens: 12, agendadas: 4 },
+  { date: '11/10', triagens: 15, agendadas: 6 },
+  { date: '12/10', triagens: 18, agendadas: 8 },
+  { date: '13/10', triagens: 14, agendadas: 5 },
+  { date: '14/10', triagens: 22, agendadas: 10 },
+  { date: '15/10', triagens: 20, agendadas: 9 },
+  { date: '16/10', triagens: 25, agendadas: 12 },
 ]
 
 const recentLeads = [
@@ -64,12 +57,12 @@ export default function Index() {
   return (
     <div className="space-y-6">
       <div className="bg-primary/5 border border-primary/10 rounded-2xl p-6 mb-8 animate-fade-in">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Painel da Clínica</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">ATENDIMENTO LL</h1>
         <p className="text-primary mt-2 font-medium text-lg">
           Conquiste sua melhor versão com acompanhamento médico especializado.
         </p>
         <p className="text-muted-foreground mt-1 text-sm">
-          Visão geral do volume de atendimentos e agendamentos de pacientes.
+          Painel de desempenho e volume de agendamentos da clínica.
         </p>
       </div>
 
@@ -89,8 +82,8 @@ export default function Index() {
             trend: 'Para os próximos 7 dias',
           },
           {
-            title: 'Taxa de Conversão (Agendamentos)',
-            value: '32.4%',
+            title: 'Taxa de Conversão',
+            value: '42.8%',
             icon: TrendingUp,
             trend: '+5.1% este mês',
           },
@@ -119,49 +112,53 @@ export default function Index() {
       >
         <Card className="col-span-1 lg:col-span-4">
           <CardHeader>
-            <CardTitle>Volume de Atendimentos vs Agendamentos</CardTitle>
+            <CardTitle>Conversão: Triagem → Consulta Agendada</CardTitle>
             <CardDescription>
-              Comparativo de leads em triagem e consultas efetivadas nos últimos 7 dias.
+              Desempenho de conversão de leads avaliados na triagem que efetivaram agendamento.
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="flex flex-wrap gap-6 mb-6">
+              <div>
+                <p className="text-3xl font-bold text-foreground">126</p>
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Activity className="w-4 h-4" /> Leads em Triagem
+                </p>
+              </div>
+              <div className="w-px bg-border my-2 hidden sm:block" />
+              <div>
+                <p className="text-3xl font-bold text-foreground">54</p>
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <CalendarDays className="w-4 h-4" /> Consultas Agendadas
+                </p>
+              </div>
+              <div className="w-px bg-border my-2 hidden sm:block" />
+              <div>
+                <p className="text-3xl font-bold text-primary">42.8%</p>
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <TrendingUp className="w-4 h-4" /> Conversão Geral
+                </p>
+              </div>
+            </div>
+
             <ChartContainer
               config={{
                 triagens: { label: 'Em Triagem', color: 'hsl(var(--chart-1))' },
-                consultas: { label: 'Consultas Agendadas', color: 'hsl(var(--chart-2))' },
+                agendadas: { label: 'Consulta Agendada', color: 'hsl(var(--chart-2))' },
               }}
-              className="h-[300px]"
+              className="h-[250px] w-full"
             >
-              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorTriagens" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-triagens)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="var(--color-triagens)" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorConsultas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-consultas)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="var(--color-consultas)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+              <BarChart
+                data={conversionChartData}
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
                 <YAxis tickLine={false} axisLine={false} tickMargin={8} />
-                <Tooltip content={<ChartTooltipContent />} />
-                <Area
-                  type="monotone"
-                  dataKey="triagens"
-                  stroke="var(--color-triagens)"
-                  fillOpacity={1}
-                  fill="url(#colorTriagens)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="consultas"
-                  stroke="var(--color-consultas)"
-                  fillOpacity={1}
-                  fill="url(#colorConsultas)"
-                />
-              </AreaChart>
+                <Tooltip content={<ChartTooltipContent />} cursor={{ fill: 'var(--muted)' }} />
+                <Bar dataKey="triagens" fill="var(--color-triagens)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="agendadas" fill="var(--color-agendadas)" radius={[4, 4, 0, 0]} />
+              </BarChart>
             </ChartContainer>
           </CardContent>
         </Card>

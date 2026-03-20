@@ -2,52 +2,83 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
-import { Activity, MessageSquare, Clock, ArrowRight, Play, Plus, CalendarDays } from 'lucide-react'
+import {
+  Activity,
+  MessageSquare,
+  Clock,
+  ArrowRight,
+  Link,
+  Plus,
+  CalendarDays,
+  Copy,
+} from 'lucide-react'
 
 const WORKFLOWS = [
   {
     id: 1,
-    name: 'Boas-vindas Paciente Novo',
-    desc: 'Envia mensagem inicial de acolhimento quando um lead envia a primeira mensagem.',
+    name: 'Confirmação de Consulta',
+    desc: 'Dispara mensagem automática via WhatsApp 24h antes da consulta médica agendada.',
     active: true,
-    stats: '1.2k envios (98% sucesso)',
+    stats: '850 envios (95% confirmados)',
+    webhook: 'https://api.atendimentoll.com/wh/confirm',
     steps: [
       {
         type: 'trigger',
-        icon: MessageSquare,
-        text: 'Mensagem Recebida',
-        sub: 'Palavra-chave: "olá", "agendar", "consulta"',
+        icon: CalendarDays,
+        text: 'Webhook Recebido',
+        sub: 'Evento: consulta.proxima',
       },
-      { type: 'action', icon: Clock, text: 'Aguardar', sub: '1 minuto' },
-      { type: 'action', icon: Activity, text: 'Enviar Template', sub: 'Template: acolhimento_v1' },
+      { type: 'action', icon: Clock, text: 'Aguardar', sub: 'Imediato' },
+      {
+        type: 'action',
+        icon: MessageSquare,
+        text: 'Enviar WhatsApp',
+        sub: 'Template: confirmacao_v2',
+      },
     ],
   },
   {
     id: 2,
-    name: 'Lembrete de Consulta (24h)',
-    desc: 'Dispara lembrete automático 24 horas antes do agendamento no sistema.',
+    name: 'Retorno (Acompanhamento)',
+    desc: 'Notifica pacientes que precisam agendar retorno médico com a Dra. Letícia.',
     active: true,
-    stats: '340 envios (95% confirmação)',
+    stats: '120 envios (40% retornaram)',
+    webhook: 'https://api.atendimentoll.com/wh/retorno',
     steps: [
-      { type: 'trigger', icon: CalendarDays, text: 'Agendamento Próximo', sub: 'Tempo: -24 horas' },
+      {
+        type: 'trigger',
+        icon: Activity,
+        text: 'Webhook Recebido',
+        sub: 'Evento: paciente.retorno_vencido',
+      },
       {
         type: 'action',
         icon: MessageSquare,
-        text: 'Enviar Mensagem',
-        sub: '"Você tem uma consulta amanhã com a Dra. Letícia..."',
+        text: 'Enviar WhatsApp',
+        sub: 'Template: agendar_retorno',
       },
     ],
   },
   {
     id: 3,
-    name: 'Acompanhamento Pós-Procedimento',
-    desc: 'Envia dicas de cuidado 7 dias após procedimento estético realizado.',
+    name: 'Lembrete de Revisão de Procedimento',
+    desc: 'Alerta para revisão estética após o período determinado (ex: 15 dias pós-botox).',
     active: false,
     stats: '0 envios (Pausado)',
+    webhook: 'https://api.atendimentoll.com/wh/revisao',
     steps: [
-      { type: 'trigger', icon: Activity, text: 'Estágio Alterado', sub: 'Para: Pós-Procedimento' },
-      { type: 'action', icon: Clock, text: 'Aguardar', sub: '7 dias' },
-      { type: 'action', icon: MessageSquare, text: 'Enviar Mensagem', sub: 'Fluxo: Dicas_Pos_Op' },
+      {
+        type: 'trigger',
+        icon: Activity,
+        text: 'Webhook Recebido',
+        sub: 'Evento: proc.revisao_pendente',
+      },
+      {
+        type: 'action',
+        icon: MessageSquare,
+        text: 'Enviar WhatsApp',
+        sub: 'Template: revisao_estetica',
+      },
     ],
   },
 ]
@@ -57,9 +88,9 @@ export default function Automacoes() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Automações da Clínica</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Hub de Automação & Webhooks</h1>
           <p className="text-muted-foreground mt-1">
-            Crie fluxos de comunicação para manter seus pacientes engajados e informados.
+            Configure gatilhos e integrações para lembretes de consultas e pós-procedimentos.
           </p>
         </div>
         <Button size="lg">
@@ -101,7 +132,7 @@ export default function Automacoes() {
                       ${step.type === 'trigger' ? 'bg-blue-100 border-blue-200 text-blue-700' : 'bg-background border-border text-muted-foreground'}`}
                     >
                       {step.type === 'trigger' ? (
-                        <Play className="w-3 h-3 ml-0.5" />
+                        <Link className="w-3 h-3 ml-0.5" />
                       ) : (
                         <ArrowRight className="w-3 h-3" />
                       )}
@@ -114,20 +145,38 @@ export default function Automacoes() {
                 ))}
               </div>
 
-              <div className="flex items-center justify-between mt-auto pt-4 border-t">
-                <Badge
-                  variant="outline"
-                  className="font-normal text-xs text-muted-foreground bg-transparent"
-                >
-                  {flow.stats}
-                </Badge>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-primary h-8 px-2 hover:bg-primary/10"
-                >
-                  Editar Fluxo
-                </Button>
+              <div className="space-y-4 mt-auto pt-4 border-t">
+                <div>
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Endpoint de Gatilho (Webhook)
+                  </span>
+                  <div className="bg-muted/50 rounded-md p-2 mt-1.5 flex items-center justify-between text-xs font-mono text-muted-foreground border border-border/50">
+                    <span className="truncate mr-2">{flow.webhook}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 shrink-0 hover:bg-background"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Badge
+                    variant="outline"
+                    className="font-normal text-xs text-muted-foreground bg-transparent"
+                  >
+                    {flow.stats}
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-primary h-8 px-2 hover:bg-primary/10"
+                  >
+                    Configurar
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
