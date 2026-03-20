@@ -31,6 +31,7 @@ import {
   Search,
   Bell,
   Menu,
+  FileText,
 } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 
@@ -39,6 +40,7 @@ const navItems = [
   { title: 'Atendimento', url: '/conversas', icon: MessageSquare, badge: '5' },
   { title: 'Jornada do Paciente', url: '/crm', icon: Layers },
   { title: 'Pacientes', url: '/contatos', icon: Users },
+  { title: 'Templates', url: '/templates', icon: FileText },
   { title: 'Automações', url: '/automacoes', icon: Activity },
   { title: 'Configurações', url: '/configuracoes', icon: Settings },
 ]
@@ -47,6 +49,7 @@ const bottomNavItems = [
   { title: 'Home', url: '/', icon: LayoutDashboard },
   { title: 'Chat', url: '/conversas', icon: MessageSquare, badge: '5' },
   { title: 'CRM', url: '/crm', icon: Layers },
+  { title: 'Temp.', url: '/templates', icon: FileText },
   { title: 'Auto', url: '/automacoes', icon: Activity },
 ]
 
@@ -178,7 +181,6 @@ export default function Layout() {
           <Outlet />
         </main>
 
-        {/* Mobile Bottom Navigation */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-background border-t flex items-center justify-around px-2 z-50 pb-safe">
           {bottomNavItems.map((item) => {
             const isActive = location.pathname === item.url
