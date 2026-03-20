@@ -38,7 +38,7 @@ const conversionData = {
     { d: '15/10', t: 20, a: 9 },
     { d: '16/10', t: 25, a: 12 },
   ],
-  leticia: [
+  laisa: [
     { d: '10/10', t: 6, a: 3 },
     { d: '11/10', t: 8, a: 4 },
     { d: '12/10', t: 10, a: 5 },
@@ -68,7 +68,7 @@ const conversionData = {
 }
 
 const rankingData = [
-  { id: 'leticia', name: 'Dra. Letícia L.', leads: 67, agendadas: 33, conv: 49.2 },
+  { id: 'laisa', name: 'Dra. Laisa Chimello', leads: 67, agendadas: 33, conv: 49.2 },
   { id: 'ana', name: 'Dra. Ana P.', leads: 22, agendadas: 9, conv: 40.9 },
   { id: 'carlos', name: 'Dr. Carlos M.', leads: 37, agendadas: 12, conv: 32.4 },
 ]
@@ -91,7 +91,9 @@ export default function Index() {
   return (
     <div className="space-y-6">
       <div className="bg-primary/5 border border-primary/10 rounded-2xl p-6 mb-8 animate-fade-in">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">ATENDIMENTO LL</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          Atendimento Laisa Chimello
+        </h1>
         <p className="text-primary mt-2 font-medium text-lg">
           Conquiste sua melhor versão com acompanhamento médico especializado.
         </p>
@@ -153,7 +155,7 @@ export default function Index() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos Especialistas</SelectItem>
-                <SelectItem value="leticia">Dra. Letícia L.</SelectItem>
+                <SelectItem value="laisa">Dra. Laisa Chimello</SelectItem>
                 <SelectItem value="ana">Dra. Ana P.</SelectItem>
                 <SelectItem value="carlos">Dr. Carlos M.</SelectItem>
               </SelectContent>

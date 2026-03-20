@@ -26,7 +26,7 @@ const TEMPLATES = [
     title: 'Lembrete de Retorno Mensal',
     category: 'Lembrete de Retorno',
     content:
-      'Olá, {nome_paciente}!\n\nJá faz um tempinho desde a sua última visita à ATENDIMENTO LL. Que tal agendarmos seu retorno para acompanhamento do tratamento?\n\nPodemos marcar para a próxima semana?',
+      'Olá, {nome_paciente}!\n\nJá faz um tempinho desde a sua última visita ao Atendimento Laisa Chimello. Que tal agendarmos seu retorno para acompanhamento do tratamento?\n\nPodemos marcar para a próxima semana?',
   },
   {
     id: 3,
@@ -40,7 +40,7 @@ const TEMPLATES = [
     title: 'Boas-vindas - Novo Lead',
     category: 'Boas-vindas',
     content:
-      'Olá! Bem-vindo(a) à ATENDIMENTO LL.\n\nSomos especialistas em realçar sua melhor versão. Como podemos te ajudar hoje? Você gostaria de agendar uma avaliação?',
+      'Olá! Bem-vindo(a) ao Atendimento Laisa Chimello.\n\nSomos especialistas em realçar sua melhor versão. Como podemos te ajudar hoje? Você gostaria de agendar uma avaliação?',
   },
   {
     id: 5,

@@ -20,7 +20,7 @@ const WORKFLOWS = [
     desc: 'Dispara mensagem automática via WhatsApp 24h antes da consulta médica agendada.',
     active: true,
     stats: '850 envios (95% confirmados)',
-    webhook: 'https://api.atendimentoll.com/wh/confirm',
+    webhook: 'https://api.laisachimello.com/wh/confirm',
     steps: [
       {
         type: 'trigger',
@@ -40,10 +40,10 @@ const WORKFLOWS = [
   {
     id: 2,
     name: 'Retorno (Acompanhamento)',
-    desc: 'Notifica pacientes que precisam agendar retorno médico com a Dra. Letícia.',
+    desc: 'Notifica pacientes que precisam agendar retorno médico com a Dra. Laisa Chimello.',
     active: true,
     stats: '120 envios (40% retornaram)',
-    webhook: 'https://api.atendimentoll.com/wh/retorno',
+    webhook: 'https://api.laisachimello.com/wh/retorno',
     steps: [
       {
         type: 'trigger',
@@ -65,7 +65,7 @@ const WORKFLOWS = [
     desc: 'Alerta para revisão estética após o período determinado (ex: 15 dias pós-botox).',
     active: false,
     stats: '0 envios (Pausado)',
-    webhook: 'https://api.atendimentoll.com/wh/revisao',
+    webhook: 'https://api.laisachimello.com/wh/revisao',
     steps: [
       {
         type: 'trigger',

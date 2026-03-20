@@ -65,7 +65,7 @@ export default function Layout() {
             <div className="w-8 h-8 shrink-0 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
               <Activity className="w-5 h-5 fill-current" />
             </div>
-            <span className="truncate tracking-tight">ATENDIMENTO LL</span>
+            <span className="truncate tracking-tight">Atendimento Laisa Chimello</span>
           </div>
         </SidebarHeader>
         <SidebarContent className="px-2 py-4">
@@ -101,7 +101,7 @@ export default function Layout() {
             <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center text-primary-foreground">
               <Activity className="w-4 h-4 fill-current" />
             </div>
-            <span className="truncate">ATENDIMENTO LL</span>
+            <span className="truncate">Atendimento Laisa Chimello</span>
           </div>
 
           <div className="hidden md:flex items-center">
@@ -144,16 +144,16 @@ export default function Layout() {
                         src="https://img.usecurling.com/ppl/thumbnail?gender=female&seed=24"
                         alt="Avatar"
                       />
-                      <AvatarFallback>LL</AvatarFallback>
+                      <AvatarFallback>LC</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">Dra. Letícia L.</p>
+                      <p className="text-sm font-medium leading-none">Dra. Laisa Chimello</p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        diretoria@atendimentoll.com.br
+                        contato@laisachimello.com.br
                       </p>
                     </div>
                   </DropdownMenuLabel>

@@ -52,7 +52,7 @@ const MESSAGES = [
   {
     id: 1,
     sender: 'bot',
-    text: 'Olá! Bem-vindo ao ATENDIMENTO LL. Especialistas em sua melhor versão. Como podemos te ajudar hoje?',
+    text: 'Olá! Bem-vindo ao Atendimento Laisa Chimello. Especialistas em sua melhor versão. Como podemos te ajudar hoje?',
     time: '10:40',
     isBot: true,
   },
