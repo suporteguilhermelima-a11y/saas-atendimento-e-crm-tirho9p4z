@@ -14,6 +14,7 @@ import {
   MoreVertical,
   Phone,
   Info,
+  MessageSquare,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -280,12 +281,15 @@ export default function Conversas() {
               <h5 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
                 Estágio no Funil
               </h5>
-              <select className="w-full text-sm border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-primary">
-                <option>Lead</option>
-                <option>Contato Inicial</option>
-                <option>Proposta Enviada</option>
-                <option selected>Negociação</option>
-                <option>Fechado</option>
+              <select
+                defaultValue="Negociação"
+                className="w-full text-sm border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="Lead">Lead</option>
+                <option value="Contato Inicial">Contato Inicial</option>
+                <option value="Proposta Enviada">Proposta Enviada</option>
+                <option value="Negociação">Negociação</option>
+                <option value="Fechado">Fechado</option>
               </select>
             </div>
 
