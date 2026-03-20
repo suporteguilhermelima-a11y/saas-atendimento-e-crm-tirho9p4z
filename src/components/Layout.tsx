@@ -26,7 +26,7 @@ import {
   MessageSquare,
   Users,
   Layers,
-  Zap,
+  Activity,
   Settings,
   Search,
   Bell,
@@ -36,18 +36,18 @@ import { useIsMobile } from '@/hooks/use-mobile'
 
 const navItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
-  { title: 'Conversas', url: '/conversas', icon: MessageSquare, badge: '3' },
-  { title: 'CRM & Funis', url: '/crm', icon: Layers },
-  { title: 'Contatos', url: '/contatos', icon: Users },
-  { title: 'Automações', url: '/automacoes', icon: Zap },
+  { title: 'Atendimento', url: '/conversas', icon: MessageSquare, badge: '5' },
+  { title: 'Jornada do Paciente', url: '/crm', icon: Layers },
+  { title: 'Pacientes', url: '/contatos', icon: Users },
+  { title: 'Automações', url: '/automacoes', icon: Activity },
   { title: 'Configurações', url: '/configuracoes', icon: Settings },
 ]
 
 const bottomNavItems = [
   { title: 'Home', url: '/', icon: LayoutDashboard },
-  { title: 'Chat', url: '/conversas', icon: MessageSquare, badge: '3' },
+  { title: 'Chat', url: '/conversas', icon: MessageSquare, badge: '5' },
   { title: 'CRM', url: '/crm', icon: Layers },
-  { title: 'Auto', url: '/automacoes', icon: Zap },
+  { title: 'Auto', url: '/automacoes', icon: Activity },
 ]
 
 export default function Layout() {
@@ -58,11 +58,11 @@ export default function Layout() {
     <SidebarProvider>
       <Sidebar variant="inset" className="hidden md:flex">
         <SidebarHeader className="h-16 flex items-center justify-center border-b px-4">
-          <div className="flex items-center gap-2 font-bold text-xl text-primary w-full">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
-              <Zap className="w-5 h-5 fill-current" />
+          <div className="flex items-center gap-2 font-bold text-lg text-primary w-full">
+            <div className="w-8 h-8 shrink-0 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
+              <Activity className="w-5 h-5 fill-current" />
             </div>
-            <span>ChatCRM</span>
+            <span className="truncate tracking-tight">ATENDIMENTO LL</span>
           </div>
         </SidebarHeader>
         <SidebarContent className="px-2 py-4">
@@ -94,10 +94,11 @@ export default function Layout() {
 
       <SidebarInset className="flex flex-col min-h-screen">
         <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4 md:px-6 z-10 sticky top-0">
-          <div className="md:hidden flex items-center gap-2 font-bold text-lg text-primary mr-2">
+          <div className="md:hidden flex items-center gap-2 font-bold text-sm text-primary mr-2">
             <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center text-primary-foreground">
-              <Zap className="w-4 h-4 fill-current" />
+              <Activity className="w-4 h-4 fill-current" />
             </div>
+            <span className="truncate">ATENDIMENTO LL</span>
           </div>
 
           <div className="hidden md:flex items-center">
@@ -109,7 +110,7 @@ export default function Layout() {
               <Search className="absolute left-2.5 text-muted-foreground w-4 h-4" />
               <Input
                 type="search"
-                placeholder="Buscar contatos, mensagens..."
+                placeholder="Buscar pacientes, prontuários..."
                 className="w-full bg-muted/50 pl-9 rounded-full border-none focus-visible:ring-1 shadow-none h-9"
               />
             </div>
@@ -120,7 +121,7 @@ export default function Layout() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                 </span>
-                WhatsApp Online
+                Recepção Online
               </div>
 
               <Button
@@ -137,26 +138,26 @@ export default function Layout() {
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
                       <AvatarImage
-                        src="https://img.usecurling.com/ppl/thumbnail?gender=male&seed=12"
+                        src="https://img.usecurling.com/ppl/thumbnail?gender=female&seed=24"
                         alt="Avatar"
                       />
-                      <AvatarFallback>JD</AvatarFallback>
+                      <AvatarFallback>LL</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">João Diretor</p>
+                      <p className="text-sm font-medium leading-none">Dra. Letícia L.</p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        joao@empresa.com.br
+                        diretoria@atendimentoll.com.br
                       </p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>Perfil</DropdownMenuItem>
-                  <DropdownMenuItem>Faturamento</DropdownMenuItem>
-                  <DropdownMenuItem>Configurações</DropdownMenuItem>
+                  <DropdownMenuItem>Perfil Profissional</DropdownMenuItem>
+                  <DropdownMenuItem>Assinatura & Plano</DropdownMenuItem>
+                  <DropdownMenuItem>Configurações da Clínica</DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-destructive focus:text-destructive">
                     Sair

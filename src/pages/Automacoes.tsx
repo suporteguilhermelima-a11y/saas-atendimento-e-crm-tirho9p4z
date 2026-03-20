@@ -2,13 +2,13 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
-import { Zap, MessageSquare, Clock, ArrowRight, Play, Plus, MoreVertical } from 'lucide-react'
+import { Activity, MessageSquare, Clock, ArrowRight, Play, Plus, CalendarDays } from 'lucide-react'
 
 const WORKFLOWS = [
   {
     id: 1,
-    name: 'Boas-vindas Lead Novo',
-    desc: 'Envia mensagem inicial quando um contato chega pela primeira vez.',
+    name: 'Boas-vindas Paciente Novo',
+    desc: 'Envia mensagem inicial de acolhimento quando um lead envia a primeira mensagem.',
     active: true,
     stats: '1.2k envios (98% sucesso)',
     steps: [
@@ -16,37 +16,38 @@ const WORKFLOWS = [
         type: 'trigger',
         icon: MessageSquare,
         text: 'Mensagem Recebida',
-        sub: 'Palavra-chave: "olá", "quero"',
+        sub: 'Palavra-chave: "olá", "agendar", "consulta"',
       },
       { type: 'action', icon: Clock, text: 'Aguardar', sub: '1 minuto' },
-      { type: 'action', icon: Zap, text: 'Enviar Template', sub: 'Template: boas_vindas_v1' },
+      { type: 'action', icon: Activity, text: 'Enviar Template', sub: 'Template: acolhimento_v1' },
     ],
   },
   {
     id: 2,
-    name: 'Recuperação de Carrinho',
-    desc: 'Dispara 2h após abandono no e-commerce integrado.',
+    name: 'Lembrete de Consulta (24h)',
+    desc: 'Dispara lembrete automático 24 horas antes do agendamento no sistema.',
     active: true,
-    stats: '340 envios (12% conversão)',
+    stats: '340 envios (95% confirmação)',
     steps: [
-      { type: 'trigger', icon: Zap, text: 'Webhook Recebido', sub: 'Evento: cart_abandoned' },
+      { type: 'trigger', icon: CalendarDays, text: 'Agendamento Próximo', sub: 'Tempo: -24 horas' },
       {
         type: 'action',
         icon: MessageSquare,
         text: 'Enviar Mensagem',
-        sub: '"Esqueceu algo no carrinho?"',
+        sub: '"Você tem uma consulta amanhã com a Dra. Letícia..."',
       },
     ],
   },
   {
     id: 3,
-    name: 'Qualificação Automática (Bot)',
-    desc: 'Faz 3 perguntas antes de transferir para o atendente humano.',
+    name: 'Acompanhamento Pós-Procedimento',
+    desc: 'Envia dicas de cuidado 7 dias após procedimento estético realizado.',
     active: false,
     stats: '0 envios (Pausado)',
     steps: [
-      { type: 'trigger', icon: MessageSquare, text: 'Tag Adicionada', sub: 'Tag: "qualificar"' },
-      { type: 'action', icon: Zap, text: 'Iniciar Fluxo Bot', sub: 'Fluxo: Lead_Qualify' },
+      { type: 'trigger', icon: Activity, text: 'Estágio Alterado', sub: 'Para: Pós-Procedimento' },
+      { type: 'action', icon: Clock, text: 'Aguardar', sub: '7 dias' },
+      { type: 'action', icon: MessageSquare, text: 'Enviar Mensagem', sub: 'Fluxo: Dicas_Pos_Op' },
     ],
   },
 ]
@@ -56,13 +57,13 @@ export default function Automacoes() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Automações & Bot</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Automações da Clínica</h1>
           <p className="text-muted-foreground mt-1">
-            Crie fluxos de trabalho para automatizar seu atendimento.
+            Crie fluxos de comunicação para manter seus pacientes engajados e informados.
           </p>
         </div>
         <Button size="lg">
-          <Plus className="w-5 h-5 mr-2" /> Novo Fluxo
+          <Plus className="w-5 h-5 mr-2" /> Novo Fluxo Médico
         </Button>
       </div>
 
@@ -75,7 +76,7 @@ export default function Automacoes() {
             <CardHeader className="pb-4">
               <div className="flex justify-between items-start">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-3">
-                  <Zap className="w-5 h-5" />
+                  <Activity className="w-5 h-5" />
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-medium text-muted-foreground">
@@ -125,7 +126,7 @@ export default function Automacoes() {
                   size="sm"
                   className="text-primary h-8 px-2 hover:bg-primary/10"
                 >
-                  Editar Lógica
+                  Editar Fluxo
                 </Button>
               </div>
             </CardContent>

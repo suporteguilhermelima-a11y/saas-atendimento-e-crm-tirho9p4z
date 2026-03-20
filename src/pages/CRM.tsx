@@ -3,19 +3,19 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
-import { Plus, MoreHorizontal, Calendar, DollarSign } from 'lucide-react'
+import { Plus, MoreHorizontal, Calendar, Activity } from 'lucide-react'
 
 const PIPELINE_STAGES = [
-  { id: 'lead', title: 'Novos Leads', color: 'border-blue-200 bg-blue-50/50', count: 3 },
-  { id: 'contact', title: 'Contato Inicial', color: 'border-purple-200 bg-purple-50/50', count: 2 },
+  { id: 'lead', title: 'Novo Lead', color: 'border-blue-200 bg-blue-50/50', count: 3 },
+  { id: 'triage', title: 'Triagem', color: 'border-purple-200 bg-purple-50/50', count: 2 },
   {
-    id: 'proposal',
-    title: 'Proposta Enviada',
+    id: 'scheduled',
+    title: 'Consulta Agendada',
     color: 'border-orange-200 bg-orange-50/50',
-    count: 1,
+    count: 2,
   },
-  { id: 'negotiation', title: 'Negociação', color: 'border-yellow-200 bg-yellow-50/50', count: 2 },
-  { id: 'won', title: 'Fechado (Ganho)', color: 'border-green-200 bg-green-50/50', count: 4 },
+  { id: 'treatment', title: 'Em Tratamento', color: 'border-yellow-200 bg-yellow-50/50', count: 2 },
+  { id: 'post_op', title: 'Pós-Procedimento', color: 'border-green-200 bg-green-50/50', count: 4 },
 ]
 
 const DEALS = [
@@ -23,8 +23,7 @@ const DEALS = [
     id: 1,
     stage: 'lead',
     name: 'Mariana Silva',
-    company: 'TechCorp',
-    value: 'R$ 1.500',
+    procedure: 'Avaliação Facial',
     date: 'Hoje',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=1',
   },
@@ -32,36 +31,32 @@ const DEALS = [
     id: 2,
     stage: 'lead',
     name: 'João Souza',
-    company: 'Padaria Central',
-    value: 'R$ 800',
+    procedure: 'Tratamento Capilar',
     date: 'Ontem',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=5',
   },
   {
     id: 3,
-    stage: 'contact',
+    stage: 'triage',
     name: 'Carlos Santos',
-    company: 'Consultoria CS',
-    value: 'R$ 3.200',
+    procedure: 'Dúvidas Botox',
     date: '2 dias atrás',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=2',
   },
   {
     id: 4,
-    stage: 'proposal',
-    name: 'Empresa Alpha',
-    company: 'Alpha SA',
-    value: 'R$ 12.000',
-    date: '5 dias atrás',
-    avatar: 'https://img.usecurling.com/i?q=alpha',
+    stage: 'scheduled',
+    name: 'Beatriz Almeida',
+    procedure: 'Preenchimento',
+    date: 'Dia 15/10 - 14h',
+    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=12',
   },
   {
     id: 5,
-    stage: 'negotiation',
+    stage: 'treatment',
     name: 'Ana Oliveira',
-    company: 'Moda Fashion',
-    value: 'R$ 2.400',
-    date: '1 semana',
+    procedure: 'Protocolo de Pele - Sessão 2',
+    date: 'Em andamento',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=3',
   },
 ]
@@ -71,9 +66,9 @@ export default function CRM() {
     <div className="flex flex-col h-[calc(100vh-8rem)]">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Funil de Vendas</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Jornada do Paciente</h1>
           <p className="text-muted-foreground mt-1">
-            Gerencie oportunidades e arraste os cards pelos estágios.
+            Gerencie o fluxo de atendimento desde o primeiro contato até o pós-procedimento.
           </p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
@@ -81,7 +76,7 @@ export default function CRM() {
             Visualização em Lista
           </Button>
           <Button className="w-full sm:w-auto">
-            <Plus className="w-4 h-4 mr-2" /> Nova Oportunidade
+            <Plus className="w-4 h-4 mr-2" /> Novo Prontuário
           </Button>
         </div>
       </div>
@@ -125,16 +120,16 @@ export default function CRM() {
                           <MoreHorizontal className="w-4 h-4" />
                         </Button>
                       </div>
-                      <p className="text-xs text-muted-foreground mb-3">{deal.company}</p>
+                      <p className="text-xs text-muted-foreground mb-3">{deal.procedure}</p>
 
                       <div className="flex items-center justify-between text-xs font-medium">
                         <div className="flex items-center text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
                           <Calendar className="w-3 h-3 mr-1" />
                           {deal.date}
                         </div>
-                        <div className="flex items-center text-green-700 bg-green-50 dark:bg-green-950/30 px-2 py-1 rounded-md">
-                          <DollarSign className="w-3 h-3 mr-0.5" />
-                          {deal.value}
+                        <div className="flex items-center text-primary bg-primary/10 px-2 py-1 rounded-md">
+                          <Activity className="w-3 h-3 mr-0.5" />
+                          Ver Ficha
                         </div>
                       </div>
                     </div>
@@ -144,7 +139,7 @@ export default function CRM() {
                 {/* Empty State placeholder */}
                 {DEALS.filter((deal) => deal.stage === stage.id).length === 0 && (
                   <div className="flex items-center justify-center h-24 text-sm text-muted-foreground/50 border border-dashed rounded-lg">
-                    Nenhum card
+                    Nenhum paciente
                   </div>
                 )}
               </div>

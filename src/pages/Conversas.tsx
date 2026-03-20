@@ -22,28 +22,28 @@ const CHATS = [
   {
     id: 1,
     name: 'Mariana Silva',
-    msg: 'Gostaria de saber mais sobre...',
+    msg: 'Gostaria de agendar uma avaliação...',
     time: '10:42',
     unread: 2,
-    status: 'Aguardando',
+    status: 'Novo Lead',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=1',
   },
   {
     id: 2,
     name: 'Carlos Santos',
-    msg: 'Perfeito, vou fechar o plano.',
+    msg: 'Qual o valor da consulta?',
     time: '09:15',
     unread: 0,
-    status: 'Em Atendimento',
+    status: 'Triagem',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=2',
   },
   {
     id: 3,
     name: 'Ana Oliveira',
-    msg: 'Obrigada pelo retorno!',
+    msg: 'Obrigada pelo retorno da receita!',
     time: 'Ontem',
     unread: 0,
-    status: 'Finalizado',
+    status: 'Pós-Procedimento',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=3',
   },
 ]
@@ -52,15 +52,15 @@ const MESSAGES = [
   {
     id: 1,
     sender: 'bot',
-    text: 'Olá! Bem-vindo ao nosso atendimento. Como podemos ajudar?',
+    text: 'Olá! Bem-vindo ao ATENDIMENTO LL. Especialistas em sua melhor versão. Como podemos te ajudar hoje?',
     time: '10:40',
     isBot: true,
   },
-  { id: 2, sender: 'user', text: 'Gostaria de saber mais sobre os planos do CRM.', time: '10:41' },
+  { id: 2, sender: 'user', text: 'Gostaria de agendar uma avaliação facial.', time: '10:41' },
   {
     id: 3,
     sender: 'bot',
-    text: 'Transferindo para um de nossos especialistas...',
+    text: 'Perfeito! Estamos transferindo você para nossa recepção.',
     time: '10:41',
     isBot: true,
   },
@@ -81,13 +81,13 @@ export default function Conversas() {
         )}
       >
         <div className="p-4 border-b">
-          <h2 className="text-lg font-semibold mb-4">Conversas</h2>
+          <h2 className="text-lg font-semibold mb-4">Recepção de Contatos</h2>
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar conversas..." className="pl-9 bg-background" />
+            <Input placeholder="Buscar pacientes..." className="pl-9 bg-background" />
           </div>
           <div className="flex gap-2 mt-4 overflow-x-auto pb-1 hide-scrollbar">
-            {['Todos', 'Aguardando', 'Atendimento', 'Bot'].map((tab) => (
+            {['Todos', 'Triagem', 'Agendados', 'Pós'].map((tab) => (
               <Badge
                 key={tab}
                 variant={activeTab === tab ? 'default' : 'secondary'}
@@ -217,7 +217,7 @@ export default function Conversas() {
                 <Paperclip className="w-5 h-5" />
               </Button>
               <Input
-                placeholder="Digite uma mensagem..."
+                placeholder="Digite sua mensagem de retorno..."
                 className="flex-1 border-none bg-transparent shadow-none focus-visible:ring-0 px-0"
               />
               <Button size="icon" className="shrink-0 rounded-full h-9 w-9">
@@ -231,7 +231,7 @@ export default function Conversas() {
           <MessageSquare className="w-16 h-16 text-muted mb-4" />
           <h3 className="text-xl font-medium text-muted-foreground">Selecione uma conversa</h3>
           <p className="text-sm text-muted-foreground mt-2">
-            Escolha um contato na lista ao lado para iniciar o atendimento.
+            Escolha um paciente na lista ao lado para iniciar o atendimento.
           </p>
         </div>
       )}
@@ -239,7 +239,7 @@ export default function Conversas() {
       {/* Right Sidebar - Contact Info */}
       <div className="w-72 border-l bg-background hidden lg:flex flex-col">
         <div className="h-16 border-b flex items-center px-4">
-          <h3 className="font-medium">Detalhes do Contato</h3>
+          <h3 className="font-medium">Ficha do Paciente</h3>
         </div>
         <ScrollArea className="flex-1 p-4">
           <div className="flex flex-col items-center text-center mb-6">
@@ -256,20 +256,20 @@ export default function Conversas() {
           <div className="space-y-4">
             <div>
               <h5 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                Etiqueta (Tags)
+                Etiqueta Médica
               </h5>
               <div className="flex flex-wrap gap-2">
                 <Badge
                   variant="secondary"
                   className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none"
                 >
-                  Quente
+                  Avaliação
                 </Badge>
                 <Badge
                   variant="secondary"
                   className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-none"
                 >
-                  Produto X
+                  Botox
                 </Badge>
                 <Button variant="outline" size="sm" className="h-6 text-xs border-dashed">
                   +
@@ -279,28 +279,28 @@ export default function Conversas() {
 
             <div>
               <h5 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                Estágio no Funil
+                Jornada (Funil)
               </h5>
               <select
-                defaultValue="Negociação"
+                defaultValue="triage"
                 className="w-full text-sm border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-primary"
               >
-                <option value="Lead">Lead</option>
-                <option value="Contato Inicial">Contato Inicial</option>
-                <option value="Proposta Enviada">Proposta Enviada</option>
-                <option value="Negociação">Negociação</option>
-                <option value="Fechado">Fechado</option>
+                <option value="lead">Novo Lead</option>
+                <option value="triage">Triagem</option>
+                <option value="scheduled">Consulta Agendada</option>
+                <option value="treatment">Em Tratamento</option>
+                <option value="post_op">Pós-Procedimento</option>
               </select>
             </div>
 
             <div>
               <h5 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                Anotações
+                Observações Clínicas
               </h5>
               <textarea
                 className="w-full text-sm border rounded-md px-3 py-2 bg-muted/30 focus:outline-none focus:ring-1 focus:ring-primary resize-none min-h-[100px]"
-                placeholder="Adicione notas sobre o cliente..."
-                defaultValue="Cliente tem interesse no plano Pro. Pediu desconto para pagamento anual."
+                placeholder="Adicione notas sobre o histórico do paciente..."
+                defaultValue="Paciente relata interesse em rejuvenescimento facial. Sem alergias conhecidas."
               />
             </div>
           </div>

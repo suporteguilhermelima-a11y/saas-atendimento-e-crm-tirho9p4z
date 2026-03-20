@@ -10,16 +10,23 @@ import {
 } from 'recharts'
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart'
 import { Badge } from '@/components/ui/badge'
-import { MessageSquare, Users, Zap, TrendingUp, ArrowUpRight } from 'lucide-react'
+import {
+  MessageSquare,
+  Users,
+  Activity,
+  TrendingUp,
+  ArrowUpRight,
+  CalendarDays,
+} from 'lucide-react'
 
 const chartData = [
-  { date: '01/10', recebidas: 400, enviadas: 240 },
-  { date: '02/10', recebidas: 300, enviadas: 139 },
-  { date: '03/10', recebidas: 200, enviadas: 980 },
-  { date: '04/10', recebidas: 278, enviadas: 390 },
-  { date: '05/10', recebidas: 189, enviadas: 480 },
-  { date: '06/10', recebidas: 239, enviadas: 380 },
-  { date: '07/10', recebidas: 349, enviadas: 430 },
+  { date: '01/10', triagens: 40, consultas: 24 },
+  { date: '02/10', triagens: 30, consultas: 13 },
+  { date: '03/10', triagens: 20, consultas: 18 },
+  { date: '04/10', triagens: 27, consultas: 39 },
+  { date: '05/10', triagens: 18, consultas: 28 },
+  { date: '06/10', triagens: 23, consultas: 38 },
+  { date: '07/10', triagens: 34, consultas: 43 },
 ]
 
 const recentLeads = [
@@ -34,21 +41,21 @@ const recentLeads = [
     id: 2,
     name: 'Carlos Santos',
     phone: '+55 21 98888-2222',
-    status: 'Em Atendimento',
+    status: 'Triagem',
     time: 'Há 15 min',
   },
   {
     id: 3,
-    name: 'Empresa X (João)',
+    name: 'Juliana Costa',
     phone: '+55 31 97777-3333',
-    status: 'Qualificado',
+    status: 'Agendada',
     time: 'Há 1 hora',
   },
   {
     id: 4,
     name: 'Ana Oliveira',
     phone: '+55 41 96666-4444',
-    status: 'Novo Lead',
+    status: 'Em Tratamento',
     time: 'Há 2 horas',
   },
 ]
@@ -56,22 +63,37 @@ const recentLeads = [
 export default function Index() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Visão geral do seu atendimento e vendas.</p>
+      <div className="bg-primary/5 border border-primary/10 rounded-2xl p-6 mb-8 animate-fade-in">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Painel da Clínica</h1>
+        <p className="text-primary mt-2 font-medium text-lg">
+          Conquiste sua melhor versão com acompanhamento médico especializado.
+        </p>
+        <p className="text-muted-foreground mt-1 text-sm">
+          Visão geral do volume de atendimentos e agendamentos de pacientes.
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[
           {
-            title: 'Total de Conversas',
-            value: '1.248',
+            title: 'Atendimentos (Hoje)',
+            value: '148',
             icon: MessageSquare,
             trend: '+12% esta semana',
           },
-          { title: 'Novos Leads (Hoje)', value: '42', icon: Users, trend: '+4% vs ontem' },
-          { title: 'Automações Ativas', value: '12', icon: Zap, trend: '89% de sucesso' },
-          { title: 'Taxa de Conversão', value: '18.4%', icon: TrendingUp, trend: '+2.1% este mês' },
+          { title: 'Novos Pacientes (Leads)', value: '42', icon: Users, trend: '+4% vs ontem' },
+          {
+            title: 'Consultas Agendadas',
+            value: '28',
+            icon: CalendarDays,
+            trend: 'Para os próximos 7 dias',
+          },
+          {
+            title: 'Taxa de Conversão (Agendamentos)',
+            value: '32.4%',
+            icon: TrendingUp,
+            trend: '+5.1% este mês',
+          },
         ].map((stat, i) => (
           <Card key={i} className="animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -97,28 +119,28 @@ export default function Index() {
       >
         <Card className="col-span-1 lg:col-span-4">
           <CardHeader>
-            <CardTitle>Volume de Mensagens</CardTitle>
+            <CardTitle>Volume de Atendimentos vs Agendamentos</CardTitle>
             <CardDescription>
-              Comparativo de mensagens enviadas e recebidas nos últimos 7 dias.
+              Comparativo de leads em triagem e consultas efetivadas nos últimos 7 dias.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer
               config={{
-                recebidas: { label: 'Recebidas', color: 'hsl(var(--chart-1))' },
-                enviadas: { label: 'Enviadas', color: 'hsl(var(--chart-2))' },
+                triagens: { label: 'Em Triagem', color: 'hsl(var(--chart-1))' },
+                consultas: { label: 'Consultas Agendadas', color: 'hsl(var(--chart-2))' },
               }}
               className="h-[300px]"
             >
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="colorRecebidas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-recebidas)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="var(--color-recebidas)" stopOpacity={0} />
+                  <linearGradient id="colorTriagens" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-triagens)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="var(--color-triagens)" stopOpacity={0} />
                   </linearGradient>
-                  <linearGradient id="colorEnviadas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-enviadas)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="var(--color-enviadas)" stopOpacity={0} />
+                  <linearGradient id="colorConsultas" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-consultas)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="var(--color-consultas)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -127,17 +149,17 @@ export default function Index() {
                 <Tooltip content={<ChartTooltipContent />} />
                 <Area
                   type="monotone"
-                  dataKey="recebidas"
-                  stroke="var(--color-recebidas)"
+                  dataKey="triagens"
+                  stroke="var(--color-triagens)"
                   fillOpacity={1}
-                  fill="url(#colorRecebidas)"
+                  fill="url(#colorTriagens)"
                 />
                 <Area
                   type="monotone"
-                  dataKey="enviadas"
-                  stroke="var(--color-enviadas)"
+                  dataKey="consultas"
+                  stroke="var(--color-consultas)"
                   fillOpacity={1}
-                  fill="url(#colorEnviadas)"
+                  fill="url(#colorConsultas)"
                 />
               </AreaChart>
             </ChartContainer>
@@ -146,8 +168,8 @@ export default function Index() {
 
         <Card className="col-span-1 lg:col-span-3">
           <CardHeader>
-            <CardTitle>Leads Recentes</CardTitle>
-            <CardDescription>Últimos contatos capturados via WhatsApp.</CardDescription>
+            <CardTitle>Últimos Contatos</CardTitle>
+            <CardDescription>Pacientes recentes aguardando retorno da recepção.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
