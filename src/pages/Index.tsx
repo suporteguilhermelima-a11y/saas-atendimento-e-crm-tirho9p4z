@@ -289,9 +289,7 @@ export default function Index() {
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Painel de Gestão - {currentUser.name}
         </h1>
-        <p className="text-primary mt-2 font-medium text-lg">
-          Conquiste sua melhor versão com acompanhamento médico especializado.
-        </p>
+        <p className="text-primary mt-2 font-medium text-lg">ACOMPANHE OS NOVOS AGENDAMENTOS</p>
         <p className="text-muted-foreground mt-1 text-sm">
           Visão administrativa completa do desempenho e volume de agendamentos da clínica.
         </p>
