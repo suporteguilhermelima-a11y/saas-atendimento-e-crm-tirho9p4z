@@ -4,8 +4,32 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
-import { Plus, MoreHorizontal, Calendar, Activity, AlertTriangle } from 'lucide-react'
+import {
+  Plus,
+  MoreHorizontal,
+  Calendar,
+  Activity,
+  AlertTriangle,
+  UserPlus,
+  Filter,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useUser, TEAM } from '@/contexts/UserContext'
 
 const PIPELINE_STAGES = [
   { id: 'lead', title: 'Novo Lead', color: 'border-blue-200 bg-blue-50/50' },
@@ -17,6 +41,8 @@ const PIPELINE_STAGES = [
   { id: 'consulting', title: 'Consultoria', color: 'border-indigo-200 bg-indigo-50/50' },
 ]
 
+const ATTENDANTS = TEAM.filter((u) => ['ana', 'natalia'].includes(u.id))
+
 const INITIAL_DEALS = [
   {
     id: 1,
@@ -26,6 +52,7 @@ const INITIAL_DEALS = [
     date: 'Hoje',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=1',
     hoursInStage: 2,
+    attendant: 'ana',
   },
   {
     id: 2,
@@ -35,6 +62,7 @@ const INITIAL_DEALS = [
     date: 'Ontem',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=5',
     hoursInStage: 24,
+    attendant: null,
   },
   {
     id: 3,
@@ -44,6 +72,7 @@ const INITIAL_DEALS = [
     date: '3 dias atrás',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=2',
     hoursInStage: 54, // Triggers alert (> 48h)
+    attendant: 'natalia',
   },
   {
     id: 6,
@@ -53,6 +82,7 @@ const INITIAL_DEALS = [
     date: 'Hoje',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=8',
     hoursInStage: 12,
+    attendant: 'ana',
   },
   {
     id: 4,
@@ -62,6 +92,7 @@ const INITIAL_DEALS = [
     date: 'Dia 15/10 - 14h',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=12',
     hoursInStage: 10,
+    attendant: 'natalia',
   },
   {
     id: 7,
@@ -71,6 +102,7 @@ const INITIAL_DEALS = [
     date: 'Semana que vem',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=15',
     hoursInStage: 5,
+    attendant: 'ana',
   },
   {
     id: 5,
@@ -80,11 +112,14 @@ const INITIAL_DEALS = [
     date: 'Em andamento',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=3',
     hoursInStage: 120,
+    attendant: null,
   },
 ]
 
 export default function CRM() {
+  const { currentUser } = useUser()
   const [deals, setDeals] = useState(INITIAL_DEALS)
+  const [attendantFilter, setAttendantFilter] = useState('all')
 
   const handleDragStart = (e: React.DragEvent, dealId: number) => {
     e.dataTransfer.setData('dealId', dealId.toString())
@@ -107,36 +142,82 @@ export default function CRM() {
     )
   }
 
+  const handleAssignAttendant = (dealId: number, attendantId: string) => {
+    setDeals((currentDeals) =>
+      currentDeals.map((deal) => (deal.id === dealId ? { ...deal, attendant: attendantId } : deal)),
+    )
+  }
+
+  // Filter based on role and active filter
+  const visibleDeals = deals.filter((deal) => {
+    if (attendantFilter !== 'all') {
+      return deal.attendant === attendantFilter
+    }
+    return true
+  })
+
+  // Clinical view optimization
+  const visibleStages =
+    currentUser.role === 'clinical'
+      ? PIPELINE_STAGES.filter((s) =>
+          ['scheduled', 'return', 'treatment', 'post_op'].includes(s.id),
+        )
+      : PIPELINE_STAGES
+
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)]">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Jornada Médica Especializada</h1>
-          <p className="text-muted-foreground mt-1">
-            Gerencie o pipeline de pacientes, focando na conversão e acompanhamento.
+          <p className="text-muted-foreground mt-1 text-sm">
+            {currentUser.role === 'clinical'
+              ? 'Acompanhamento dos pacientes agendados e em tratamento.'
+              : 'Gerencie o pipeline de pacientes, focando na conversão e acompanhamento.'}
           </p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button variant="outline" className="w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          {currentUser.role !== 'clinical' && (
+            <div className="flex items-center gap-2 bg-muted/50 rounded-md px-2 border">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <Select value={attendantFilter} onValueChange={setAttendantFilter}>
+                <SelectTrigger className="w-[160px] border-none bg-transparent shadow-none focus:ring-0">
+                  <SelectValue placeholder="Atendente Humano" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos Atendentes</SelectItem>
+                  {ATTENDANTS.map((att) => (
+                    <SelectItem key={att.id} value={att.id}>
+                      {att.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <Button variant="outline" className="w-full sm:w-auto hidden sm:flex">
             Visualização em Lista
           </Button>
-          <Button className="w-full sm:w-auto">
-            <Plus className="w-4 h-4 mr-2" /> Novo Prontuário
-          </Button>
+          {currentUser.role !== 'clinical' && (
+            <Button className="w-full sm:w-auto">
+              <Plus className="w-4 h-4 mr-2" /> Novo Prontuário
+            </Button>
+          )}
         </div>
       </div>
 
       <ScrollArea className="flex-1 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 pb-4">
         <div className="flex gap-6 h-full min-w-max animate-fade-in">
-          {PIPELINE_STAGES.map((stage) => {
-            const stageDeals = deals.filter((deal) => deal.stage === stage.id)
+          {visibleStages.map((stage) => {
+            const stageDeals = visibleDeals.filter((deal) => deal.stage === stage.id)
 
             return (
               <div
                 key={stage.id}
                 className="flex flex-col w-80 shrink-0"
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, stage.id)}
+                onDragOver={currentUser.role !== 'clinical' ? handleDragOver : undefined}
+                onDrop={
+                  currentUser.role !== 'clinical' ? (e) => handleDrop(e, stage.id) : undefined
+                }
               >
                 <div
                   className={`flex items-center justify-between mb-3 px-3 py-2 rounded-lg border ${stage.color} dark:bg-muted/20 dark:border-border`}
@@ -154,20 +235,26 @@ export default function CRM() {
                   {stageDeals.map((deal) => {
                     // Logic for Recovery Alerts
                     const isStagnant = deal.stage === 'triage' && deal.hoursInStage > 48
+                    const attendantUser = ATTENDANTS.find((a) => a.id === deal.attendant)
 
                     return (
                       <Card
                         key={deal.id}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, deal.id)}
+                        draggable={currentUser.role !== 'clinical'}
+                        onDragStart={
+                          currentUser.role !== 'clinical'
+                            ? (e) => handleDragStart(e, deal.id)
+                            : undefined
+                        }
                         className={cn(
                           'cursor-grab active:cursor-grabbing hover:shadow-md transition-all group relative',
                           isStagnant
                             ? 'border-destructive/60 shadow-sm bg-destructive/5'
                             : 'border-border/50 bg-card',
+                          currentUser.role === 'clinical' && 'cursor-default active:cursor-default',
                         )}
                       >
-                        {isStagnant && (
+                        {isStagnant && currentUser.role !== 'clinical' && (
                           <div className="absolute -top-2.5 -right-2 bg-destructive text-destructive-foreground text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shadow-sm animate-pulse z-10">
                             <AlertTriangle className="w-3 h-3" /> &gt;48h Retido
                           </div>
@@ -179,16 +266,43 @@ export default function CRM() {
                                 <AvatarImage src={deal.avatar} />
                                 <AvatarFallback>{deal.name.charAt(0)}</AvatarFallback>
                               </Avatar>
-                              <span className="font-medium text-sm leading-none">{deal.name}</span>
+                              <span className="font-medium text-sm leading-none truncate max-w-[140px]">
+                                {deal.name}
+                              </span>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity -mr-1 -mt-1"
-                            >
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
+
+                            {currentUser.role !== 'clinical' && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity -mr-1 -mt-1"
+                                  >
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel className="text-xs">
+                                    Atribuir Atendente
+                                  </DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  {ATTENDANTS.map((att) => (
+                                    <DropdownMenuItem
+                                      key={att.id}
+                                      onClick={() => handleAssignAttendant(deal.id, att.id)}
+                                    >
+                                      <Avatar className="w-4 h-4 mr-2">
+                                        <AvatarImage src={att.avatar} />
+                                      </Avatar>
+                                      {att.name}
+                                    </DropdownMenuItem>
+                                  ))}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
                           </div>
+
                           <p className="text-xs text-muted-foreground mb-3">{deal.procedure}</p>
 
                           <div className="flex items-center justify-between text-xs font-medium">
@@ -196,10 +310,29 @@ export default function CRM() {
                               <Calendar className="w-3 h-3 mr-1" />
                               {deal.date}
                             </div>
-                            <div className="flex items-center text-primary bg-primary/10 px-2 py-1 rounded-md">
-                              <Activity className="w-3 h-3 mr-0.5" />
-                              Ficha
-                            </div>
+
+                            {currentUser.role !== 'clinical' ? (
+                              attendantUser ? (
+                                <div
+                                  className="flex items-center gap-1 bg-primary/10 text-primary px-1.5 py-0.5 rounded-md"
+                                  title={`Atendente: ${attendantUser.name}`}
+                                >
+                                  <Avatar className="w-4 h-4">
+                                    <AvatarImage src={attendantUser.avatar} />
+                                  </Avatar>
+                                  <span className="text-[10px]">{attendantUser.name}</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">
+                                  <UserPlus className="w-3 h-3 mr-1" />
+                                  <span className="text-[10px]">Sem Atendente</span>
+                                </div>
+                              )
+                            ) : (
+                              <div className="flex items-center text-primary bg-primary/10 px-2 py-1 rounded-md cursor-pointer hover:bg-primary/20 transition-colors">
+                                <Activity className="w-3 h-3 mr-0.5" /> Ficha
+                              </div>
+                            )}
                           </div>
                         </div>
                       </Card>
@@ -208,7 +341,9 @@ export default function CRM() {
 
                   {stageDeals.length === 0 && (
                     <div className="flex items-center justify-center h-24 text-sm text-muted-foreground/50 border border-dashed rounded-lg">
-                      Arraste pacientes para cá
+                      {currentUser.role === 'clinical'
+                        ? 'Sem agendamentos'
+                        : 'Arraste pacientes para cá'}
                     </div>
                   )}
                 </div>

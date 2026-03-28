@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from 'react-router-dom'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   Sidebar,
   SidebarContent,
@@ -32,30 +32,66 @@ import {
   Bell,
   Menu,
   FileText,
+  UserCircle,
 } from 'lucide-react'
-import { useIsMobile } from '@/hooks/use-mobile'
+import { useUser, TEAM, Role } from '@/contexts/UserContext'
 
-const navItems = [
-  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
-  { title: 'Atendimento', url: '/conversas', icon: MessageSquare, badge: '5' },
-  { title: 'Jornada do Paciente', url: '/crm', icon: Layers },
-  { title: 'Pacientes', url: '/contatos', icon: Users },
-  { title: 'Templates', url: '/templates', icon: FileText },
-  { title: 'Automações', url: '/automacoes', icon: Activity },
-  { title: 'Configurações', url: '/configuracoes', icon: Settings },
+type NavItem = {
+  title: string
+  url: string
+  icon: any
+  badge?: string
+  roles: Role[]
+}
+
+const navItems: NavItem[] = [
+  { title: 'Dashboard', url: '/', icon: LayoutDashboard, roles: ['admin', 'clinical'] },
+  {
+    title: 'Atendimento',
+    url: '/conversas',
+    icon: MessageSquare,
+    badge: '5',
+    roles: ['admin', 'operational'],
+  },
+  {
+    title: 'Jornada do Paciente',
+    url: '/crm',
+    icon: Layers,
+    roles: ['admin', 'operational', 'clinical'],
+  },
+  {
+    title: 'Pacientes',
+    url: '/contatos',
+    icon: Users,
+    roles: ['admin', 'operational', 'clinical'],
+  },
+  { title: 'Templates', url: '/templates', icon: FileText, roles: ['admin', 'operational'] },
+  { title: 'Automações', url: '/automacoes', icon: Activity, roles: ['admin'] },
+  { title: 'Configurações', url: '/configuracoes', icon: Settings, roles: ['admin'] },
 ]
 
 const bottomNavItems = [
-  { title: 'Home', url: '/', icon: LayoutDashboard },
-  { title: 'Chat', url: '/conversas', icon: MessageSquare, badge: '5' },
-  { title: 'CRM', url: '/crm', icon: Layers },
-  { title: 'Temp.', url: '/templates', icon: FileText },
-  { title: 'Auto', url: '/automacoes', icon: Activity },
+  { title: 'Home', url: '/', icon: LayoutDashboard, roles: ['admin', 'clinical'] },
+  {
+    title: 'Chat',
+    url: '/conversas',
+    icon: MessageSquare,
+    badge: '5',
+    roles: ['admin', 'operational'],
+  },
+  { title: 'CRM', url: '/crm', icon: Layers, roles: ['admin', 'operational', 'clinical'] },
+  { title: 'Auto', url: '/automacoes', icon: Activity, roles: ['admin'] },
 ]
 
 export default function Layout() {
   const location = useLocation()
-  const isMobile = useIsMobile()
+  const navigate = useNavigate()
+  const { currentUser, setCurrentUser } = useUser()
+
+  const navItemsFiltered = navItems.filter((item) => item.roles.includes(currentUser.role))
+  const bottomNavItemsFiltered = bottomNavItems.filter((item) =>
+    item.roles.includes(currentUser.role),
+  )
 
   return (
     <SidebarProvider>
@@ -65,12 +101,12 @@ export default function Layout() {
             <div className="w-8 h-8 shrink-0 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
               <Activity className="w-5 h-5 fill-current" />
             </div>
-            <span className="truncate tracking-tight">Atendimento Laisa Chimello</span>
+            <span className="truncate tracking-tight">Atendimento Laisa C.</span>
           </div>
         </SidebarHeader>
         <SidebarContent className="px-2 py-4">
           <SidebarMenu>
-            {navItems.map((item) => (
+            {navItemsFiltered.map((item) => (
               <SidebarMenuItem key={item.url}>
                 <SidebarMenuButton
                   asChild
@@ -101,7 +137,6 @@ export default function Layout() {
             <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center text-primary-foreground">
               <Activity className="w-4 h-4 fill-current" />
             </div>
-            <span className="truncate">Atendimento Laisa Chimello</span>
           </div>
 
           <div className="hidden md:flex items-center">
@@ -140,27 +175,48 @@ export default function Layout() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage
-                        src="https://img.usecurling.com/ppl/thumbnail?gender=female&seed=24"
-                        alt="Avatar"
-                      />
-                      <AvatarFallback>LC</AvatarFallback>
+                      <AvatarImage src={currentUser.avatar} alt="Avatar" />
+                      <AvatarFallback>{currentUser.name.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuContent className="w-64" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">Dra. Laisa Chimello</p>
+                      <p className="text-sm font-medium leading-none">{currentUser.name}</p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        contato@laisachimello.com.br
+                        {currentUser.title}
                       </p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs text-muted-foreground uppercase flex items-center gap-1">
+                    <UserCircle className="w-3 h-3" /> Alterar Visão (Demo)
+                  </DropdownMenuLabel>
+                  {TEAM.map((u) => (
+                    <DropdownMenuItem
+                      key={u.id}
+                      onClick={() => {
+                        setCurrentUser(u)
+                        if (u.role === 'operational' && location.pathname === '/') {
+                          navigate('/conversas')
+                        }
+                      }}
+                      className={currentUser.id === u.id ? 'bg-muted' : ''}
+                    >
+                      <Avatar className="h-5 w-5 mr-2">
+                        <AvatarImage src={u.avatar} />
+                        <AvatarFallback>{u.name.substring(0, 1)}</AvatarFallback>
+                      </Avatar>
+                      <span className="flex-1">{u.name}</span>
+                      <span className="text-[10px] text-muted-foreground uppercase">{u.role}</span>
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem>Perfil Profissional</DropdownMenuItem>
-                  <DropdownMenuItem>Assinatura & Plano</DropdownMenuItem>
-                  <DropdownMenuItem>Configurações da Clínica</DropdownMenuItem>
+                  {currentUser.role === 'admin' && (
+                    <DropdownMenuItem>Configurações da Clínica</DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-destructive focus:text-destructive">
                     Sair
@@ -182,7 +238,7 @@ export default function Layout() {
         </main>
 
         <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-background border-t flex items-center justify-around px-2 z-50 pb-safe">
-          {bottomNavItems.map((item) => {
+          {bottomNavItemsFiltered.map((item) => {
             const isActive = location.pathname === item.url
             return (
               <Link

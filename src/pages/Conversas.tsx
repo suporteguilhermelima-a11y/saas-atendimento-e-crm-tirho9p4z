@@ -15,8 +15,17 @@ import {
   Phone,
   Info,
   MessageSquare,
+  UserCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useUser, TEAM } from '@/contexts/UserContext'
 
 const CHATS = [
   {
@@ -27,6 +36,7 @@ const CHATS = [
     unread: 2,
     status: 'Novo Lead',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=1',
+    attendant: 'ana',
   },
   {
     id: 2,
@@ -36,6 +46,7 @@ const CHATS = [
     unread: 0,
     status: 'Triagem',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=2',
+    attendant: 'natalia',
   },
   {
     id: 3,
@@ -45,6 +56,7 @@ const CHATS = [
     unread: 0,
     status: 'Pós-Procedimento',
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=3',
+    attendant: 'ana',
   },
 ]
 
@@ -60,7 +72,7 @@ const MESSAGES = [
   {
     id: 3,
     sender: 'bot',
-    text: 'Perfeito! Estamos transferindo você para nossa recepção.',
+    text: 'Perfeito! Estamos transferindo você para nossa recepção humana.',
     time: '10:41',
     isBot: true,
   },
@@ -68,8 +80,13 @@ const MESSAGES = [
 ]
 
 export default function Conversas() {
+  const { currentUser } = useUser()
   const [activeTab, setActiveTab] = useState('Todos')
   const [selectedChat, setSelectedChat] = useState<number | null>(1)
+
+  const ATTENDANTS = TEAM.filter((u) => ['ana', 'natalia'].includes(u.id))
+
+  const activeChatDetails = CHATS.find((c) => c.id === selectedChat)
 
   return (
     <div className="flex h-[calc(100vh-8rem)] -m-4 md:-m-6 lg:-m-8 border rounded-xl overflow-hidden bg-background shadow-sm animate-fade-in-up">
@@ -131,7 +148,7 @@ export default function Conversas() {
       </div>
 
       {/* Middle - Active Chat */}
-      {selectedChat ? (
+      {selectedChat && activeChatDetails ? (
         <div className="flex-1 flex flex-col min-w-0">
           <div className="h-16 border-b flex items-center justify-between px-4 lg:px-6 bg-background">
             <div className="flex items-center gap-3">
@@ -144,13 +161,11 @@ export default function Conversas() {
                 <Search className="w-5 h-5 rotate-90" /> {/* Simulating back arrow */}
               </Button>
               <Avatar>
-                <AvatarImage src={CHATS.find((c) => c.id === selectedChat)?.avatar} />
+                <AvatarImage src={activeChatDetails.avatar} />
                 <AvatarFallback>M</AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="font-semibold text-sm">
-                  {CHATS.find((c) => c.id === selectedChat)?.name}
-                </h3>
+                <h3 className="font-semibold text-sm">{activeChatDetails.name}</h3>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> Online
                 </p>
@@ -217,7 +232,7 @@ export default function Conversas() {
                 <Paperclip className="w-5 h-5" />
               </Button>
               <Input
-                placeholder="Digite sua mensagem de retorno..."
+                placeholder={`Responder como ${currentUser.name}...`}
                 className="flex-1 border-none bg-transparent shadow-none focus-visible:ring-0 px-0"
               />
               <Button size="icon" className="shrink-0 rounded-full h-9 w-9">
@@ -244,18 +259,37 @@ export default function Conversas() {
         <ScrollArea className="flex-1 p-4">
           <div className="flex flex-col items-center text-center mb-6">
             <Avatar className="w-20 h-20 mb-3">
-              <AvatarImage src={CHATS.find((c) => c.id === selectedChat)?.avatar} />
+              <AvatarImage src={activeChatDetails?.avatar} />
               <AvatarFallback>M</AvatarFallback>
             </Avatar>
-            <h4 className="font-semibold text-lg">
-              {CHATS.find((c) => c.id === selectedChat)?.name}
-            </h4>
+            <h4 className="font-semibold text-lg">{activeChatDetails?.name}</h4>
             <p className="text-sm text-muted-foreground">+55 11 99999-1111</p>
           </div>
 
           <div className="space-y-4">
             <div>
               <h5 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                Atendente Humano
+              </h5>
+              <div className="flex items-center gap-2 bg-muted/50 rounded-md border p-1">
+                <UserCircle className="w-4 h-4 ml-2 text-muted-foreground" />
+                <Select defaultValue={activeChatDetails?.attendant}>
+                  <SelectTrigger className="flex-1 border-none bg-transparent shadow-none focus:ring-0 h-8 text-sm px-2">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ATTENDANTS.map((att) => (
+                      <SelectItem key={att.id} value={att.id}>
+                        {att.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <h5 className="text-xs font-semibold text-muted-foreground uppercase mb-2 mt-4">
                 Etiqueta Médica
               </h5>
               <div className="flex flex-wrap gap-2">

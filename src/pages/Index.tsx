@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Bar, BarChart, Tooltip, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart'
 import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Select,
   SelectContent,
@@ -26,51 +26,114 @@ import {
   TrendingUp,
   ArrowUpRight,
   CalendarDays,
+  Clock,
+  CheckCircle2,
 } from 'lucide-react'
+import { useUser } from '@/contexts/UserContext'
 
 const conversionData = {
   all: [
-    { d: '10/10', t: 12, a: 4 },
-    { d: '11/10', t: 15, a: 6 },
-    { d: '12/10', t: 18, a: 8 },
-    { d: '13/10', t: 14, a: 5 },
-    { d: '14/10', t: 22, a: 10 },
-    { d: '15/10', t: 20, a: 9 },
-    { d: '16/10', t: 25, a: 12 },
+    { d: '10/10', t: 30, a: 15 },
+    { d: '11/10', t: 35, a: 18 },
+    { d: '12/10', t: 40, a: 22 },
+    { d: '13/10', t: 32, a: 16 },
+    { d: '14/10', t: 45, a: 25 },
+    { d: '15/10', t: 42, a: 21 },
+    { d: '16/10', t: 50, a: 28 },
   ],
   laisa: [
-    { d: '10/10', t: 6, a: 3 },
-    { d: '11/10', t: 8, a: 4 },
-    { d: '12/10', t: 10, a: 5 },
-    { d: '13/10', t: 7, a: 3 },
-    { d: '14/10', t: 12, a: 6 },
-    { d: '15/10', t: 10, a: 5 },
-    { d: '16/10', t: 14, a: 7 },
+    { d: '10/10', t: 12, a: 6 },
+    { d: '11/10', t: 14, a: 8 },
+    { d: '12/10', t: 16, a: 9 },
+    { d: '13/10', t: 10, a: 5 },
+    { d: '14/10', t: 18, a: 10 },
+    { d: '15/10', t: 15, a: 7 },
+    { d: '16/10', t: 20, a: 11 },
   ],
-  carlos: [
-    { d: '10/10', t: 4, a: 1 },
-    { d: '11/10', t: 5, a: 1 },
-    { d: '12/10', t: 6, a: 2 },
-    { d: '13/10', t: 4, a: 1 },
-    { d: '14/10', t: 6, a: 2 },
-    { d: '15/10', t: 5, a: 2 },
-    { d: '16/10', t: 7, a: 3 },
+  paola: [
+    { d: '10/10', t: 8, a: 4 },
+    { d: '11/10', t: 10, a: 5 },
+    { d: '12/10', t: 12, a: 6 },
+    { d: '13/10', t: 9, a: 4 },
+    { d: '14/10', t: 14, a: 7 },
+    { d: '15/10', t: 12, a: 6 },
+    { d: '16/10', t: 15, a: 8 },
+  ],
+  beatriz: [
+    { d: '10/10', t: 5, a: 2 },
+    { d: '11/10', t: 6, a: 3 },
+    { d: '12/10', t: 5, a: 3 },
+    { d: '13/10', t: 4, a: 2 },
+    { d: '14/10', t: 7, a: 4 },
+    { d: '15/10', t: 6, a: 3 },
+    { d: '16/10', t: 8, a: 4 },
   ],
   ana: [
-    { d: '10/10', t: 2, a: 0 },
-    { d: '11/10', t: 2, a: 1 },
-    { d: '12/10', t: 2, a: 1 },
-    { d: '13/10', t: 3, a: 1 },
+    { d: '10/10', t: 3, a: 2 },
+    { d: '11/10', t: 3, a: 1 },
+    { d: '12/10', t: 4, a: 2 },
+    { d: '13/10', t: 5, a: 2 },
     { d: '14/10', t: 4, a: 2 },
-    { d: '15/10', t: 5, a: 2 },
-    { d: '16/10', t: 4, a: 2 },
+    { d: '15/10', t: 6, a: 3 },
+    { d: '16/10', t: 5, a: 2 },
+  ],
+  natalia: [
+    { d: '10/10', t: 2, a: 1 },
+    { d: '11/10', t: 2, a: 1 },
+    { d: '12/10', t: 3, a: 2 },
+    { d: '13/10', t: 4, a: 3 },
+    { d: '14/10', t: 2, a: 2 },
+    { d: '15/10', t: 3, a: 2 },
+    { d: '16/10', t: 2, a: 1 },
   ],
 }
 
 const rankingData = [
-  { id: 'laisa', name: 'Dra. Laisa Chimello', leads: 67, agendadas: 33, conv: 49.2 },
-  { id: 'ana', name: 'Dra. Ana P.', leads: 22, agendadas: 9, conv: 40.9 },
-  { id: 'carlos', name: 'Dr. Carlos M.', leads: 37, agendadas: 12, conv: 32.4 },
+  {
+    id: 'laisa',
+    name: 'Dra. Laisa Chimello',
+    role: 'Médica',
+    leads: 105,
+    agendadas: 56,
+    conv: 53.3,
+    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=24',
+  },
+  {
+    id: 'paola',
+    name: 'Dra. Paola',
+    role: 'Médica',
+    leads: 80,
+    agendadas: 40,
+    conv: 50.0,
+    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=28',
+  },
+  {
+    id: 'beatriz',
+    name: 'Beatriz',
+    role: 'Gerente',
+    leads: 41,
+    agendadas: 21,
+    conv: 51.2,
+    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=25',
+  },
+  {
+    id: 'ana',
+    name: 'Ana',
+    role: 'Comercial',
+    leads: 30,
+    agendadas: 14,
+    conv: 46.6,
+    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=26',
+  },
+  {
+    id: 'natalia',
+    name: 'Natalia',
+    role: 'Secretária',
+    leads: 18,
+    agendadas: 12,
+    conv: 66.6,
+    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=27',
+  },
 ]
 
 const recentLeads = [
@@ -79,10 +142,142 @@ const recentLeads = [
   { id: 3, name: 'Juliana C.', phone: '+55 31 97777-3333', status: 'Agendada', time: 'Há 1 hora' },
 ]
 
-export default function Index() {
-  const [spec, setSpec] = useState('all')
-  const currentChartData = conversionData[spec as keyof typeof conversionData]
+const clinicalAppointments = [
+  {
+    id: 1,
+    patient: 'Mariana Silva',
+    time: '14:00',
+    type: 'Avaliação Facial',
+    status: 'Confirmada',
+  },
+  {
+    id: 2,
+    patient: 'Roberto Costa',
+    time: '15:30',
+    type: 'Revisão Pós-Botox',
+    status: 'Aguardando',
+  },
+  {
+    id: 3,
+    patient: 'Ana Oliveira',
+    time: '16:45',
+    type: 'Protocolo de Pele',
+    status: 'Confirmada',
+  },
+  { id: 4, patient: 'João Souza', time: '17:30', type: 'Retorno', status: 'Atrasado' },
+]
 
+export default function Index() {
+  const { currentUser } = useUser()
+  const [spec, setSpec] = useState('all')
+
+  if (currentUser.role === 'operational') {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-4 animate-fade-in">
+        <Activity className="w-16 h-16 text-primary mb-4" />
+        <h2 className="text-3xl font-bold">Olá, {currentUser.name}</h2>
+        <p className="text-muted-foreground max-w-md mx-auto">
+          Sua interface é otimizada para o atendimento de pacientes. Utilize o menu lateral ou
+          inferior para acessar as Conversas ou o CRM e dar andamento aos leads.
+        </p>
+      </div>
+    )
+  }
+
+  if (currentUser.role === 'clinical') {
+    return (
+      <div className="space-y-6">
+        <div className="bg-primary/5 border border-primary/10 rounded-2xl p-6 mb-8 animate-fade-in">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Agenda Clínica - {currentUser.name}
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Visão otimizada de agendamentos e prontuários para o corpo clínico.
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="animate-fade-in-up">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Pacientes Hoje
+              </CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">12</div>
+            </CardContent>
+          </Card>
+          <Card className="animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Confirmados
+              </CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">10</div>
+            </CardContent>
+          </Card>
+          <Card className="animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Próximo Atendimento
+              </CardTitle>
+              <Clock className="h-4 w-4 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">14:00</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="animate-fade-in-up" style={{ animationDelay: '300ms' }}>
+          <CardHeader>
+            <CardTitle>Próximos Pacientes</CardTitle>
+            <CardDescription>Acompanhe os próximos horários da sua agenda hoje.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Horário</TableHead>
+                  <TableHead>Paciente</TableHead>
+                  <TableHead>Procedimento</TableHead>
+                  <TableHead className="text-right">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {clinicalAppointments.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell className="font-medium">{row.time}</TableCell>
+                    <TableCell>{row.patient}</TableCell>
+                    <TableCell className="text-muted-foreground">{row.type}</TableCell>
+                    <TableCell className="text-right">
+                      <Badge
+                        variant={
+                          row.status === 'Confirmada'
+                            ? 'default'
+                            : row.status === 'Aguardando'
+                              ? 'secondary'
+                              : 'destructive'
+                        }
+                      >
+                        {row.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Admin View
+  const currentChartData = conversionData[spec as keyof typeof conversionData] || conversionData.all
   const totalTriagens = currentChartData.reduce((acc, curr) => acc + curr.t, 0)
   const totalAgendadas = currentChartData.reduce((acc, curr) => acc + curr.a, 0)
   const currentConv =
@@ -92,13 +287,13 @@ export default function Index() {
     <div className="space-y-6">
       <div className="bg-primary/5 border border-primary/10 rounded-2xl p-6 mb-8 animate-fade-in">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Atendimento Laisa Chimello
+          Painel de Gestão - {currentUser.name}
         </h1>
         <p className="text-primary mt-2 font-medium text-lg">
           Conquiste sua melhor versão com acompanhamento médico especializado.
         </p>
         <p className="text-muted-foreground mt-1 text-sm">
-          Painel de desempenho e volume de agendamentos da clínica.
+          Visão administrativa completa do desempenho e volume de agendamentos da clínica.
         </p>
       </div>
 
@@ -106,18 +301,18 @@ export default function Index() {
         {[
           {
             title: 'Atendimentos (Hoje)',
-            value: '148',
+            value: '234',
             icon: MessageSquare,
-            trend: '+12% esta semana',
+            trend: '+15% esta semana',
           },
-          { title: 'Novos Pacientes (Leads)', value: '42', icon: Users, trend: '+4% vs ontem' },
+          { title: 'Novos Pacientes (Leads)', value: '68', icon: Users, trend: '+8% vs ontem' },
           {
             title: 'Consultas Agendadas',
-            value: '28',
+            value: '42',
             icon: CalendarDays,
             trend: 'Para os próximos 7 dias',
           },
-          { title: 'Taxa de Conversão', value: '42.8%', icon: TrendingUp, trend: '+5.1% este mês' },
+          { title: 'Taxa de Conversão', value: '51.2%', icon: TrendingUp, trend: '+4.5% este mês' },
         ].map((stat, i) => (
           <Card key={i} className="animate-fade-in-up" style={{ animationDelay: `${i * 100}ms` }}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -151,13 +346,15 @@ export default function Index() {
             </div>
             <Select value={spec} onValueChange={setSpec}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Especialista" />
+                <SelectValue placeholder="Membro da Equipe" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos Especialistas</SelectItem>
+                <SelectItem value="all">Toda a Equipe</SelectItem>
                 <SelectItem value="laisa">Dra. Laisa Chimello</SelectItem>
-                <SelectItem value="ana">Dra. Ana P.</SelectItem>
-                <SelectItem value="carlos">Dr. Carlos M.</SelectItem>
+                <SelectItem value="paola">Dra. Paola</SelectItem>
+                <SelectItem value="beatriz">Beatriz</SelectItem>
+                <SelectItem value="ana">Ana</SelectItem>
+                <SelectItem value="natalia">Natalia</SelectItem>
               </SelectContent>
             </Select>
           </CardHeader>
@@ -241,15 +438,16 @@ export default function Index() {
           <CardHeader>
             <CardTitle>Ranking de Conversão da Equipe</CardTitle>
             <CardDescription>
-              Comparativo de desempenho na conversão de Triagem para Consulta Agendada por
-              especialista.
+              Comparativo de desempenho na conversão de Triagem para Consulta Agendada por membro da
+              equipe.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Especialista</TableHead>
+                  <TableHead>Membro da Equipe</TableHead>
+                  <TableHead>Função</TableHead>
                   <TableHead className="text-right">Leads Triados</TableHead>
                   <TableHead className="text-right">Consultas Agendadas</TableHead>
                   <TableHead className="text-right">Taxa de Conversão</TableHead>
@@ -260,12 +458,14 @@ export default function Index() {
                   <TableRow key={row.id}>
                     <TableCell className="font-medium flex items-center gap-2">
                       <Avatar className="h-6 w-6">
+                        <AvatarImage src={row.avatar} />
                         <AvatarFallback className="text-[10px]">
                           {row.name.substring(0, 2)}
                         </AvatarFallback>
                       </Avatar>
                       {row.name}
                     </TableCell>
+                    <TableCell className="text-muted-foreground">{row.role}</TableCell>
                     <TableCell className="text-right">{row.leads}</TableCell>
                     <TableCell className="text-right">{row.agendadas}</TableCell>
                     <TableCell className="text-right font-semibold text-primary">
