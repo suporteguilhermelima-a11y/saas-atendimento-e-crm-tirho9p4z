@@ -15,7 +15,7 @@ Deno.serve(async (req: Request) => {
     const { deal_id, text } = await req.json()
 
     const { data: deal } = await supabase.from('deals').select('phone').eq('id', deal_id).single()
-
+    
     if (deal && deal.phone) {
       const evoUrl = Deno.env.get('EVOLUTION_API_URL')
       const evoKey = Deno.env.get('EVOLUTION_API_KEY')
@@ -26,12 +26,12 @@ Deno.serve(async (req: Request) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            apikey: evoKey,
+            'apikey': evoKey
           },
           body: JSON.stringify({
             number: deal.phone,
-            text: text,
-          }),
+            text: text
+          })
         })
       } else {
         console.warn('EVOLUTION_API variables are not set. Message saved but not sent.')

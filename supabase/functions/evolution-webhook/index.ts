@@ -25,17 +25,13 @@ Deno.serve(async (req: Request) => {
 
       if (!fromMe && text) {
         let { data: deal } = await supabase.from('deals').select('id').eq('phone', phone).single()
-
+        
         if (!deal) {
-          const { data: newDeal } = await supabase
-            .from('deals')
-            .insert({
-              name: senderName,
-              phone: phone,
-              stage: 'lead',
-            })
-            .select('id')
-            .single()
+          const { data: newDeal } = await supabase.from('deals').insert({
+            name: senderName,
+            phone: phone,
+            stage: 'lead',
+          }).select('id').single()
           deal = newDeal
         }
 
@@ -44,7 +40,7 @@ Deno.serve(async (req: Request) => {
             deal_id: deal.id,
             sender_type: 'user',
             text: text,
-            is_read: false,
+            is_read: false
           })
         }
       }
