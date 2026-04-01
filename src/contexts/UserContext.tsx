@@ -12,6 +12,8 @@ export interface UserProfile {
   email?: string
 }
 
+export const TEAM: UserProfile[] = []
+
 interface UserContextType {
   currentUser: UserProfile
   setCurrentUser: (user: UserProfile) => void

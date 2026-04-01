@@ -150,14 +150,14 @@ BEGIN
   ON CONFLICT DO NOTHING;
 
   INSERT INTO public.messages (id, deal_id, sender_type, text, created_at) VALUES
-    ('m1000000-0000-0000-0000-000000000001'::uuid, 'd1000000-0000-0000-0000-000000000001'::uuid, 'bot', 'Olá! Bem-vindo ao Atendimento Laisa Chimello. Especialistas em sua melhor versão. Como podemos te ajudar hoje?', NOW() - INTERVAL '10 minutes'),
-    ('m1000000-0000-0000-0000-000000000002'::uuid, 'd1000000-0000-0000-0000-000000000001'::uuid, 'user', 'Gostaria de agendar uma avaliação facial.', NOW() - INTERVAL '9 minutes'),
-    ('m1000000-0000-0000-0000-000000000003'::uuid, 'd1000000-0000-0000-0000-000000000001'::uuid, 'bot', 'Perfeito! Estamos transferindo você para nossa recepção humana.', NOW() - INTERVAL '9 minutes'),
-    ('m1000000-0000-0000-0000-000000000004'::uuid, 'd1000000-0000-0000-0000-000000000001'::uuid, 'user', 'Ok, no aguardo.', NOW() - INTERVAL '8 minutes')
+    ('e1000000-0000-0000-0000-000000000001'::uuid, 'd1000000-0000-0000-0000-000000000001'::uuid, 'bot', 'Olá! Bem-vindo ao Atendimento Laisa Chimello. Especialistas em sua melhor versão. Como podemos te ajudar hoje?', NOW() - INTERVAL '10 minutes'),
+    ('e1000000-0000-0000-0000-000000000002'::uuid, 'd1000000-0000-0000-0000-000000000001'::uuid, 'user', 'Gostaria de agendar uma avaliação facial.', NOW() - INTERVAL '9 minutes'),
+    ('e1000000-0000-0000-0000-000000000003'::uuid, 'd1000000-0000-0000-0000-000000000001'::uuid, 'bot', 'Perfeito! Estamos transferindo você para nossa recepção humana.', NOW() - INTERVAL '9 minutes'),
+    ('e1000000-0000-0000-0000-000000000004'::uuid, 'd1000000-0000-0000-0000-000000000001'::uuid, 'user', 'Ok, no aguardo.', NOW() - INTERVAL '8 minutes')
   ON CONFLICT DO NOTHING;
 
   INSERT INTO public.templates (id, title, category, content) VALUES
-    ('t1000000-0000-0000-0000-000000000001'::uuid, 'Confirmação de Consulta - Padrão', 'Confirmação de Consulta', 'Olá, {nome_paciente}!\n\nPassando para confirmar sua consulta com a {especialista} amanhã, {data}, às {hora}.\n\nPor favor, responda com "SIM" para confirmar ou "NÃO" para reagendar.'),
-    ('t1000000-0000-0000-0000-000000000002'::uuid, 'Lembrete de Retorno Mensal', 'Lembrete de Retorno', 'Olá, {nome_paciente}!\n\nJá faz um tempinho desde a sua última visita ao Atendimento Laisa Chimello. Que tal agendarmos seu retorno para acompanhamento do tratamento?\n\nPodemos marcar para a próxima semana?')
+    ('f1000000-0000-0000-0000-000000000001'::uuid, 'Confirmação de Consulta - Padrão', 'Confirmação de Consulta', 'Olá, {nome_paciente}!\n\nPassando para confirmar sua consulta com a {especialista} amanhã, {data}, às {hora}.\n\nPor favor, responda com "SIM" para confirmar ou "NÃO" para reagendar.'),
+    ('f1000000-0000-0000-0000-000000000002'::uuid, 'Lembrete de Retorno Mensal', 'Lembrete de Retorno', 'Olá, {nome_paciente}!\n\nJá faz um tempinho desde a sua última visita ao Atendimento Laisa Chimello. Que tal agendarmos seu retorno para acompanhamento do tratamento?\n\nPodemos marcar para a próxima semana?')
   ON CONFLICT DO NOTHING;
 END $do$;
