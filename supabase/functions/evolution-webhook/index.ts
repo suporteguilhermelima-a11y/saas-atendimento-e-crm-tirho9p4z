@@ -212,7 +212,7 @@ ${history}
 
 function extractCanonicalPhone(data: any): string | null {
   if (!data) return null
-
+  
   const jidFields = ['remoteJid', 'jid']
   for (const field of jidFields) {
     const val = data[field]
@@ -269,7 +269,7 @@ Deno.serve(async (req: Request) => {
       .select('id, user_id')
       .ilike('instance_name', cleanInstanceName)
       .maybeSingle()
-
+      
     if (!integ) {
       const { data: exactInteg } = await supabase
         .from('user_integrations')
@@ -476,9 +476,9 @@ Deno.serve(async (req: Request) => {
           .order('last_message_at', { ascending: false })
           .limit(1)
           .maybeSingle()
-
+          
         if (contactByName) {
-          contact = contactByName
+           contact = contactByName
         }
       }
 
@@ -531,50 +531,40 @@ Deno.serve(async (req: Request) => {
             variations.push(`55${withoutCountry.substring(0, 2)}9${withoutCountry.substring(2)}`)
           }
           for (const v of variations) {
-            const { data: altDeal } = await supabase
-              .from('deals')
-              .select('id')
-              .eq('phone', v)
-              .maybeSingle()
+            const { data: altDeal } = await supabase.from('deals').select('id').eq('phone', v).maybeSingle()
             if (altDeal) {
               deal = altDeal
               break
             }
           }
         }
-
+        
         if (!deal) {
-          const last8 = effectivePhone.slice(-8)
+          const last8 = effectivePhone.slice(-8);
           if (last8.length === 8) {
-            const { data: possibleDeals } = await supabase
-              .from('deals')
-              .select('id, phone')
-              .ilike('phone', `%${last8.slice(0, 4)}%${last8.slice(4, 8)}%`)
-              .limit(20)
-
-            if (possibleDeals && possibleDeals.length > 0) {
-              for (const pd of possibleDeals) {
-                if (!pd.phone) continue
-                const cleanDbPhone = pd.phone.replace(/\D/g, '')
-                const cleanEffPhone = effectivePhone.replace(/\D/g, '')
-                if (
-                  cleanDbPhone.endsWith(cleanEffPhone.slice(-10)) ||
-                  cleanEffPhone.endsWith(cleanDbPhone.slice(-10))
-                ) {
-                  deal = pd
-                  break
+             const { data: possibleDeals } = await supabase
+               .from('deals')
+               .select('id, phone')
+               .ilike('phone', `%${last8.slice(0,4)}%${last8.slice(4,8)}%`)
+               .limit(20);
+             
+             if (possibleDeals && possibleDeals.length > 0) {
+                for (const pd of possibleDeals) {
+                   if (!pd.phone) continue;
+                   const cleanDbPhone = pd.phone.replace(/\D/g, '');
+                   const cleanEffPhone = effectivePhone.replace(/\D/g, '');
+                   if (cleanDbPhone.endsWith(cleanEffPhone.slice(-10)) || cleanEffPhone.endsWith(cleanDbPhone.slice(-10))) {
+                      deal = pd;
+                      break;
+                   }
                 }
-              }
-            }
+             }
           }
         }
 
         if (deal) {
           dealId = deal.id
-          await supabase
-            .from('deals')
-            .update({ updated_at: new Date().toISOString() })
-            .eq('id', deal.id)
+          await supabase.from('deals').update({ updated_at: new Date().toISOString() }).eq('id', deal.id)
         } else {
           const { data: newDeal } = await supabase
             .from('deals')
