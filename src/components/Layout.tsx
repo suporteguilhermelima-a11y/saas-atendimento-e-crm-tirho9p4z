@@ -88,6 +88,10 @@ export default function Layout() {
   const navigate = useNavigate()
   const { currentUser, setCurrentUser } = useUser()
 
+  if (!currentUser) {
+    return <div className="flex h-screen items-center justify-center">Carregando interface...</div>
+  }
+
   const navItemsFiltered = navItems.filter((item) => item.roles.includes(currentUser.role))
   const bottomNavItemsFiltered = bottomNavItems.filter((item) =>
     item.roles.includes(currentUser.role),
@@ -176,7 +180,7 @@ export default function Layout() {
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={currentUser.avatar} alt="Avatar" />
-                      <AvatarFallback>{currentUser.name.substring(0, 2)}</AvatarFallback>
+                      <AvatarFallback>{currentUser.name?.substring(0, 2) || 'US'}</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
@@ -206,7 +210,7 @@ export default function Layout() {
                     >
                       <Avatar className="h-5 w-5 mr-2">
                         <AvatarImage src={u.avatar} />
-                        <AvatarFallback>{u.name.substring(0, 1)}</AvatarFallback>
+                        <AvatarFallback>{u.name?.substring(0, 1) || 'U'}</AvatarFallback>
                       </Avatar>
                       <span className="flex-1">{u.name}</span>
                       <span className="text-[10px] text-muted-foreground uppercase">{u.role}</span>

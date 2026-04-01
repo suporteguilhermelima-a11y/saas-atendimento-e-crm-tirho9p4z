@@ -39,7 +39,7 @@ export default function Conversas() {
   const [inputText, setInputText] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  const attendants = team.filter((u) => u.role === 'operational')
+  const attendants = (team || []).filter((u: any) => u.role === 'operational')
 
   useEffect(() => {
     const fetchChats = async () => {
@@ -136,7 +136,7 @@ export default function Conversas() {
       id: messageId,
       deal_id: selectedChat,
       sender_type: 'attendant',
-      sender_id: currentUser.id,
+      sender_id: currentUser?.id,
       text,
       status: 'pending',
       created_at: new Date().toISOString(),
@@ -149,7 +149,7 @@ export default function Conversas() {
       id: messageId,
       deal_id: selectedChat,
       sender_type: 'attendant',
-      sender_id: currentUser.id,
+      sender_id: currentUser?.id,
       text,
       status: 'pending',
     })
@@ -317,7 +317,7 @@ export default function Conversas() {
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder={`Responder como ${currentUser.name}...`}
+                placeholder={`Responder como ${currentUser?.name || 'Atendente'}...`}
                 className="flex-1 border-none bg-transparent shadow-none focus-visible:ring-0 px-0"
               />
               <Button size="icon" onClick={handleSend} className="shrink-0 rounded-full h-9 w-9">

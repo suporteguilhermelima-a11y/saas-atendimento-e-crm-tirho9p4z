@@ -171,6 +171,10 @@ export default function Index() {
   const { currentUser } = useUser()
   const [spec, setSpec] = useState('all')
 
+  if (!currentUser) {
+    return <div className="flex h-[60vh] items-center justify-center">Carregando...</div>
+  }
+
   if (currentUser.role === 'operational') {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-4 animate-fade-in">
@@ -413,7 +417,7 @@ export default function Index() {
                 <div className="flex items-center gap-3">
                   <Avatar className="h-9 w-9">
                     <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                      {lead.name.substring(0, 2).toUpperCase()}
+                      {lead.name?.substring(0, 2).toUpperCase() || 'L'}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col">
@@ -458,7 +462,7 @@ export default function Index() {
                       <Avatar className="h-6 w-6">
                         <AvatarImage src={row.avatar} />
                         <AvatarFallback className="text-[10px]">
-                          {row.name.substring(0, 2)}
+                          {row.name?.substring(0, 2) || 'U'}
                         </AvatarFallback>
                       </Avatar>
                       {row.name}

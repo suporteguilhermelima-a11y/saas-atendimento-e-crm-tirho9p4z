@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from '@/hooks/use-auth'
 import { UserProvider } from '@/contexts/UserContext'
 import Layout from './components/Layout'
 import Index from './pages/Index'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import Conversas from './pages/Conversas'
 import CRM from './pages/CRM'
 import Automacoes from './pages/Automacoes'
@@ -29,7 +30,9 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <UserProvider>
-              <Layout />
+              <ErrorBoundary>
+                <Layout />
+              </ErrorBoundary>
             </UserProvider>
           </ProtectedRoute>
         }
