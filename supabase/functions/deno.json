@@ -1,8 +1,8 @@
 {
   "_versions": {
     "evolution-webhook": 16,
-    "evolution-send": 14,
-    "evolution-mark-read": 9,
+    "evolution-send": 15,
+    "evolution-mark-read": 10,
     "create-user": 9,
     "ai-classify-contacts": 9,
     "ai-pipeline-monitor": 9,

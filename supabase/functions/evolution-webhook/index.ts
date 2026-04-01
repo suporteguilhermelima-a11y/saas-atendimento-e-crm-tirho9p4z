@@ -25,11 +25,22 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    const { data: integ } = await supabase
+    const cleanInstanceName = instanceName.trim()
+    let { data: integ } = await supabase
       .from('user_integrations')
       .select('id, user_id')
-      .eq('instance_name', instanceName)
-      .single()
+      .ilike('instance_name', cleanInstanceName)
+      .maybeSingle()
+
+    if (!integ) {
+      const { data: exactInteg } = await supabase
+        .from('user_integrations')
+        .select('id, user_id')
+        .eq('instance_name', instanceName)
+        .maybeSingle()
+      integ = exactInteg
+    }
+
     if (!integ) {
       console.log(`[WEBHOOK] Ignored: Integration not found for instance: ${instanceName}`)
       return new Response('Integration not found', { status: 200 })
@@ -248,6 +259,77 @@ Deno.serve(async (req: Request) => {
           await supabase.from('whatsapp_contacts').update(updatePayload).eq('id', contact.id)
         }
       }
+
+      // --- START DEALS CRM SYNC ---
+      let dealId = null
+      if (effectivePhone) {
+        let { data: deal } = await supabase
+          .from('deals')
+          .select('id, phone')
+          .eq('phone', effectivePhone)
+          .maybeSingle()
+
+        if (!deal && effectivePhone.startsWith('55') && effectivePhone.length >= 12) {
+          const withoutCountry = effectivePhone.substring(2)
+          let variations = []
+          if (withoutCountry.length === 11) {
+            variations.push(`55${withoutCountry.substring(0, 2)}${withoutCountry.substring(3)}`)
+          } else if (withoutCountry.length === 10) {
+            variations.push(`55${withoutCountry.substring(0, 2)}9${withoutCountry.substring(2)}`)
+          }
+          for (const v of variations) {
+            const { data: altDeal } = await supabase
+              .from('deals')
+              .select('id')
+              .eq('phone', v)
+              .maybeSingle()
+            if (altDeal) {
+              deal = altDeal
+              break
+            }
+          }
+        }
+
+        if (deal) {
+          dealId = deal.id
+          await supabase
+            .from('deals')
+            .update({ updated_at: new Date().toISOString() })
+            .eq('id', deal.id)
+        } else {
+          const { data: newDeal } = await supabase
+            .from('deals')
+            .insert({
+              name: pushName && pushName !== 'Unknown' ? pushName : effectivePhone,
+              phone: effectivePhone,
+              stage: 'lead',
+              updated_at: new Date().toISOString(),
+            })
+            .select('id')
+            .single()
+          if (newDeal) dealId = newDeal.id
+        }
+      }
+
+      if (dealId && messageId) {
+        const { data: existingMsg } = await supabase
+          .from('messages')
+          .select('id')
+          .eq('wa_message_id', messageId)
+          .maybeSingle()
+
+        if (!existingMsg) {
+          await supabase.from('messages').insert({
+            deal_id: dealId,
+            sender_type: fromMe ? 'attendant' : 'user',
+            text: text,
+            wa_message_id: messageId,
+            status: fromMe ? 'sent' : 'received',
+            is_read: fromMe ? true : false,
+          })
+        }
+      }
+      // --- END DEALS CRM SYNC ---
 
       if (contact && messageId) {
         const { error: insertError } = await supabase.from('whatsapp_messages').upsert(
