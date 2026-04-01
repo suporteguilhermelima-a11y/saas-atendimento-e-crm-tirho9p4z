@@ -85,7 +85,12 @@ export default function Conversas() {
               prev.some(
                 (m) =>
                   m.id === payload.new.id ||
-                  (m.text === payload.new.text && m.created_at === payload.new.created_at),
+                  // Prevent duplication if the exact same message was sent very recently (within 30s)
+                  (m.text === payload.new.text &&
+                    m.sender_type === payload.new.sender_type &&
+                    Math.abs(
+                      new Date(m.created_at).getTime() - new Date(payload.new.created_at).getTime(),
+                    ) < 30000),
               )
             )
               return prev
@@ -105,9 +110,12 @@ export default function Conversas() {
     const text = inputText
     setInputText('')
 
+    // Create an ID so we can match it in Realtime and avoid duplicates
+    const messageId = crypto.randomUUID()
+
     // Optimistic UI
     const tempMsg = {
-      id: crypto.randomUUID(),
+      id: messageId,
       deal_id: selectedChat,
       sender_type: 'attendant',
       sender_id: currentUser.id,
@@ -117,10 +125,23 @@ export default function Conversas() {
     setMessages((prev) => [...prev, tempMsg])
     setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
 
+    // Insert with the SAME ID we just generated so realtime ignores it safely
     await supabase
       .from('messages')
-      .insert({ deal_id: selectedChat, sender_type: 'attendant', sender_id: currentUser.id, text })
-    await supabase.functions.invoke('evolution-send', { body: { deal_id: selectedChat, text } })
+      .insert({
+        id: messageId,
+        deal_id: selectedChat,
+        sender_type: 'attendant',
+        sender_id: currentUser.id,
+        text,
+      })
+
+    const { error } = await supabase.functions.invoke('evolution-send', {
+      body: { deal_id: selectedChat, text },
+    })
+    if (error) {
+      console.error('Failed to send message via Evolution:', error)
+    }
   }
 
   const activeChatDetails = chats.find((c) => c.id === selectedChat)
