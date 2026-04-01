@@ -11,6 +11,7 @@
     "evolution-get-qr": 9,
     "evolution-send-message": 9,
     "evolution-sync-contacts": 9,
-    "evolution-sync-messages": 9
+    "evolution-sync-messages": 9,
+    "zapi-webhook": 1
   }
 }
