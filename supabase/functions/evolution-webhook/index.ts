@@ -1,161 +1,311 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
-}
+import { extractCanonicalPhone } from '../_shared/utils.ts'
+import { processAiResponse } from './ai-handler.ts'
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const payload = await req.json()
 
-    const body = await req.json()
-    console.log('Webhook payload received:', body.event)
+    // Feature: Webhook Ingress Logging
+    console.log('[WEBHOOK] INGRESS PAYLOAD:', JSON.stringify(payload))
 
-    if (body.event === 'messages.update' && body.data) {
-      const updates = Array.isArray(body.data) ? body.data : [body.data]
+    const instanceName = payload.instance
+    const event = payload.event?.toLowerCase()
 
-      for (const update of updates) {
-        const waId = update.key?.id
-        const statusStr = update.update?.status || update.status
-
-        if (waId && statusStr) {
-          let newStatus = 'sent'
-          if (['SERVER_ACK'].includes(statusStr)) newStatus = 'sent'
-          if (['DELIVERY_ACK'].includes(statusStr)) newStatus = 'delivered'
-          if (['READ', 'PLAYED'].includes(statusStr)) newStatus = 'read'
-          if (['ERROR'].includes(statusStr)) newStatus = 'error'
-
-          await supabase.from('messages').update({ status: newStatus }).eq('wa_message_id', waId)
-        }
-      }
-
-      return new Response(JSON.stringify({ success: true }), { headers: corsHeaders })
+    if (!instanceName) {
+      console.log('[WEBHOOK] Ignored: No instance provided in payload')
+      return new Response('No instance provided', { status: 200 })
     }
 
-    if (body.event === 'messages.upsert' && body.data) {
-      const msgData = body.data.message || body.data
-      const key = msgData?.key || body.data?.key
+    console.log(`[WEBHOOK] Processing event: ${event} for instance: ${instanceName}`)
 
-      if (!key || !key.remoteJid) {
-        return new Response(JSON.stringify({ success: true, reason: 'No remoteJid found' }), {
-          headers: corsHeaders,
-        })
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    const { data: integ } = await supabase
+      .from('user_integrations')
+      .select('id, user_id')
+      .eq('instance_name', instanceName)
+      .single()
+    if (!integ) {
+      console.log(`[WEBHOOK] Ignored: Integration not found for instance: ${instanceName}`)
+      return new Response('Integration not found', { status: 200 })
+    }
+    const userId = integ.user_id
+
+    if (event === 'connection.update') {
+      const state = payload.data?.state
+      if (state === 'open') {
+        console.log(`[WEBHOOK] Instance ${instanceName} connected.`)
+        await supabase
+          .from('user_integrations')
+          .update({ status: 'CONNECTED' })
+          .eq('user_id', userId)
+      } else if (state === 'close') {
+        console.log(`[WEBHOOK] Instance ${instanceName} disconnected.`)
+        await supabase
+          .from('user_integrations')
+          .update({ status: 'DISCONNECTED' })
+          .eq('user_id', userId)
+      }
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
+    if (event === 'messages.upsert') {
+      let msgObj = payload.data
+
+      if (Array.isArray(msgObj)) {
+        msgObj = msgObj[0]
+      } else if (msgObj && Array.isArray(msgObj.messages)) {
+        msgObj = msgObj.messages[0]
       }
 
-      const remoteJid = key.remoteJid
-      const waMessageId = key.id
+      if (msgObj && !msgObj.key && msgObj.message && msgObj.message.key) {
+        msgObj = msgObj.message
+      }
+
+      if (!msgObj) {
+        console.log('[WEBHOOK] Ignored: No valid message object found in payload.')
+        return new Response('No message data', { status: 200 })
+      }
+
+      const key = msgObj.key || {}
+      const remoteJid = key.remoteJid || msgObj.remoteJid || msgObj.jid
+      const messageId = key.id || msgObj.id
+      const fromMe = key.fromMe !== undefined ? key.fromMe : msgObj.fromMe || false
+
+      if (!remoteJid) {
+        console.log(
+          `[WEBHOOK] Ignored: No remoteJid found in message data (instance: ${instanceName})`,
+        )
+        return new Response('Ignored - No remoteJid', { status: 200 })
+      }
 
       if (remoteJid === 'status@broadcast' || remoteJid.includes('@g.us')) {
-        return new Response(
-          JSON.stringify({ success: true, reason: 'Ignored broadcast or group message' }),
-          { headers: corsHeaders },
+        console.log(
+          `[WEBHOOK] Ignored: Message from Broadcast or Group (remoteJid: ${remoteJid}, instance: ${instanceName})`,
         )
+        return new Response('Ignored - Broadcast/Group', { status: 200 })
       }
 
-      const messageContent = msgData?.message || msgData
-      const text =
-        messageContent?.conversation ||
-        messageContent?.extendedTextMessage?.text ||
-        messageContent?.imageMessage?.caption ||
-        ''
-      const fromMe = key.fromMe
-      const senderName = msgData?.pushName || body.data?.pushName || 'Desconhecido'
-
-      let phone = remoteJid.split('@')[0].replace(/\D/g, '')
-
-      if (phone.length === 10 || phone.length === 11) {
-        phone = `55${phone}`
+      if (!messageId) {
+        console.log(
+          `[WEBHOOK] Ignored: No messageId found for remoteJid ${remoteJid} (instance: ${instanceName})`,
+        )
+        return new Response('Ignored - No messageId', { status: 200 })
       }
 
-      if (text && phone) {
-        let { data: deal } = await supabase
-          .from('deals')
-          .select('id, stage')
-          .eq('phone', phone)
-          .single()
+      const pushName = msgObj.pushName || msgObj.verifiedName || msgObj.name || 'Unknown'
+      const canonicalPhone = extractCanonicalPhone({ remoteJid, ...msgObj, ...key })
 
-        if (!deal && !fromMe) {
-          const { data: newDeal, error: dealError } = await supabase
-            .from('deals')
-            .insert({
-              name: senderName,
-              phone: phone,
-              stage: 'lead',
-            })
-            .select('id')
-            .single()
+      let type = 'text'
+      let text = '[Media/Unsupported]'
 
-          if (dealError) throw dealError
-          deal = newDeal
+      const content = msgObj.message
+      if (typeof content === 'string') {
+        text = content
+      } else if (content && typeof content === 'object') {
+        text =
+          content.conversation ||
+          content.extendedTextMessage?.text ||
+          content.imageMessage?.caption ||
+          content.videoMessage?.caption ||
+          content.documentMessage?.caption ||
+          msgObj.text ||
+          '[Media/Unsupported]'
+
+        type = Object.keys(content).filter((k: string) => k !== 'messageContextInfo')[0] || 'text'
+      } else if (msgObj.text) {
+        text = msgObj.text
+      }
+
+      const ts = msgObj.messageTimestamp || msgObj.timestamp
+      let timestamp = new Date().toISOString()
+      if (ts) {
+        const numTs = typeof ts === 'string' ? parseInt(ts, 10) : ts
+        if (numTs > 0) {
+          timestamp = new Date(numTs < 100000000000 ? numTs * 1000 : numTs).toISOString()
         }
+      }
 
-        if (deal) {
-          let shouldInsert = true
+      let identity = null
+      if (canonicalPhone) {
+        const { data } = await supabase
+          .from('contact_identity')
+          .select('*')
+          .eq('instance_id', integ.id)
+          .eq('canonical_phone', canonicalPhone)
+          .maybeSingle()
+        identity = data
+      }
+
+      if (!identity && remoteJid) {
+        const { data } = await supabase
+          .from('contact_identity')
+          .select('*')
+          .eq('instance_id', integ.id)
+          .or(`lid_jid.eq.${remoteJid},phone_jid.eq.${remoteJid}`)
+          .limit(1)
+          .maybeSingle()
+        identity = data
+      }
+
+      if (!identity && canonicalPhone) {
+        const phoneJid = remoteJid.includes('@s.whatsapp.net')
+          ? remoteJid
+          : `${canonicalPhone}@s.whatsapp.net`
+        const lidJid = remoteJid.includes('@lid') ? remoteJid : null
+        const { data: newId } = await supabase
+          .from('contact_identity')
+          .insert({
+            instance_id: integ.id,
+            user_id: userId,
+            canonical_phone: canonicalPhone,
+            phone_jid: phoneJid,
+            lid_jid: lidJid,
+            display_name: pushName,
+          })
+          .select()
+          .single()
+        identity = newId
+      } else if (identity) {
+        const updates: any = {}
+        if (remoteJid.includes('@lid') && identity.lid_jid !== remoteJid)
+          updates.lid_jid = remoteJid
+        if (remoteJid.includes('@s.whatsapp.net') && identity.phone_jid !== remoteJid)
+          updates.phone_jid = remoteJid
+        if (Object.keys(updates).length > 0) {
+          await supabase.from('contact_identity').update(updates).eq('id', identity.id)
+        }
+      }
+
+      const effectivePhone = identity?.canonical_phone || canonicalPhone
+      const effectiveJid =
+        identity?.phone_jid || (effectivePhone ? `${effectivePhone}@s.whatsapp.net` : remoteJid)
+
+      let { data: contact } = await supabase
+        .from('whatsapp_contacts')
+        .select('id, phone_number, push_name')
+        .eq('user_id', userId)
+        .eq('remote_jid', effectiveJid)
+        .maybeSingle()
+
+      if (!contact && effectivePhone) {
+        const { data: contactByPhone } = await supabase
+          .from('whatsapp_contacts')
+          .select('id, phone_number, push_name')
+          .eq('user_id', userId)
+          .eq('phone_number', effectivePhone)
+          .limit(1)
+          .maybeSingle()
+        if (contactByPhone) contact = contactByPhone
+      }
+
+      if (!contact && remoteJid !== effectiveJid) {
+        const { data: contactByJid } = await supabase
+          .from('whatsapp_contacts')
+          .select('id, phone_number, push_name')
+          .eq('user_id', userId)
+          .eq('remote_jid', remoteJid)
+          .limit(1)
+          .maybeSingle()
+        if (contactByJid) contact = contactByJid
+      }
+
+      if (!contact) {
+        const { data: newContact } = await supabase
+          .from('whatsapp_contacts')
+          .insert({
+            user_id: userId,
+            remote_jid: effectiveJid,
+            phone_number: effectivePhone,
+            push_name: pushName,
+            last_message_at: timestamp,
+            pipeline_stage: 'Em Conversa',
+          })
+          .select('id, phone_number, push_name')
+          .single()
+        contact = newContact
+      } else {
+        const updatePayload: any = { last_message_at: timestamp, pipeline_stage: 'Em Conversa' }
+        if (
+          pushName &&
+          pushName !== 'Unknown' &&
+          (!contact.push_name || contact.push_name === 'Unknown' || /^\d+$/.test(contact.push_name))
+        ) {
+          updatePayload.push_name = pushName
+        }
+        if (effectivePhone && !contact.phone_number) {
+          updatePayload.phone_number = effectivePhone
+        }
+        if (Object.keys(updatePayload).length > 0) {
+          await supabase.from('whatsapp_contacts').update(updatePayload).eq('id', contact.id)
+        }
+      }
+
+      if (contact && messageId) {
+        const { error: insertError } = await supabase.from('whatsapp_messages').upsert(
+          {
+            user_id: userId,
+            contact_id: contact.id,
+            message_id: messageId,
+            from_me: fromMe,
+            text: text,
+            type: type,
+            timestamp: timestamp,
+            raw: msgObj,
+          },
+          { onConflict: 'user_id,message_id' },
+        )
+
+        if (insertError) {
+          console.error(`[WEBHOOK] Error inserting message ${messageId}:`, insertError)
+        } else {
+          console.log(
+            `[WEBHOOK] Successfully saved message ${messageId} for contact ${contact.id} (remoteJid: ${effectiveJid})`,
+          )
 
           if (fromMe) {
-            const { data: recent } = await supabase
-              .from('messages')
-              .select('id, created_at, wa_message_id')
-              .eq('deal_id', deal.id)
-              .eq('text', text)
-              .eq('sender_type', 'attendant')
-              .order('created_at', { ascending: false })
-              .limit(1)
-
-            if (recent && recent.length > 0) {
-              const msgTime = new Date(recent[0].created_at).getTime()
-              const now = Date.now()
-              if (Math.abs(now - msgTime) < 120000) {
-                shouldInsert = false
-                console.log('Skipping duplicate fromMe message (already sent via CRM)')
-
-                if (!recent[0].wa_message_id) {
-                  await supabase
-                    .from('messages')
-                    .update({ wa_message_id: waMessageId })
-                    .eq('id', recent[0].id)
-                }
-              }
+            console.log(
+              `[WEBHOOK] Skip AI processing: Message is from me (remoteJid: ${effectiveJid}, instance: ${instanceName})`,
+            )
+          } else if (!['text', 'conversation', 'extendedTextMessage'].includes(type)) {
+            console.log(
+              `[WEBHOOK] Skip AI processing: Message type is not text/conversation (type: ${type}, remoteJid: ${effectiveJid}, instance: ${instanceName})`,
+            )
+          } else {
+            console.log(
+              `[WEBHOOK] Triggering background AI task for contact ${contact.id} (remoteJid: ${effectiveJid})`,
+            )
+            if (
+              typeof (globalThis as any).EdgeRuntime !== 'undefined' &&
+              typeof (globalThis as any).EdgeRuntime.waitUntil === 'function'
+            ) {
+              ;(globalThis as any).EdgeRuntime.waitUntil(
+                processAiResponse(userId, contact.id, supabaseUrl, supabaseKey),
+              )
+            } else {
+              processAiResponse(userId, contact.id, supabaseUrl, supabaseKey).catch((err: any) =>
+                console.error('[WEBHOOK] Background AI task failed:', err),
+              )
             }
           }
-
-          if (shouldInsert) {
-            await supabase.from('messages').insert({
-              deal_id: deal.id,
-              sender_type: fromMe ? 'attendant' : 'user',
-              text: text,
-              is_read: fromMe ? true : false,
-              status: fromMe ? 'sent' : 'received',
-              wa_message_id: waMessageId,
-            })
-          }
-
-          await supabase
-            .from('deals')
-            .update({ updated_at: new Date().toISOString() })
-            .eq('id', deal.id)
         }
       }
     }
 
     return new Response(JSON.stringify({ success: true }), {
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
     })
   } catch (error: any) {
-    console.error('Webhook error:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    })
+    console.error('[WEBHOOK] Critical Webhook error:', error)
+    return new Response('Webhook Error', { status: 500 })
   }
 })

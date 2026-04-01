@@ -1,6 +1,16 @@
 {
   "_versions": {
-    "evolution-webhook": 4,
-    "evolution-send": 4
+    "evolution-webhook": 16,
+    "evolution-send": 14,
+    "evolution-mark-read": 9,
+    "create-user": 9,
+    "ai-classify-contacts": 9,
+    "ai-pipeline-monitor": 9,
+    "evolution-create-instance": 9,
+    "evolution-disconnect": 9,
+    "evolution-get-qr": 9,
+    "evolution-send-message": 9,
+    "evolution-sync-contacts": 9,
+    "evolution-sync-messages": 9
   }
 }
