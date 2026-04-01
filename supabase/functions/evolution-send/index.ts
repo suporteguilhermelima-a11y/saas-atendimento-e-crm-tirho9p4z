@@ -18,12 +18,8 @@ Deno.serve(async (req: Request) => {
       throw new Error('deal_id and text are required')
     }
 
-    const { data: deal, error: dealError } = await supabase
-      .from('deals')
-      .select('phone')
-      .eq('id', deal_id)
-      .single()
-
+    const { data: deal, error: dealError } = await supabase.from('deals').select('phone').eq('id', deal_id).single()
+    
     if (dealError) throw dealError
 
     if (deal && deal.phone) {
@@ -39,14 +35,14 @@ Deno.serve(async (req: Request) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            apikey: evoKey,
+            'apikey': evoKey
           },
           body: JSON.stringify({
             number: cleanPhone,
-            text: text,
-          }),
+            text: text
+          })
         })
-
+        
         if (!response.ok) {
           const errorPayload = await response.text()
           console.error('Evolution API error payload:', errorPayload)
