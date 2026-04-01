@@ -30,12 +30,11 @@ Deno.serve(async (req: Request) => {
     }
 
     // 2. Get requestor's organization
-    const { data: requestorProfile, error: profileError } =
-      await supabaseUserClient
-        .from('users')
-        .select('organization_id')
-        .eq('id', requestor.id)
-        .single()
+    const { data: requestorProfile, error: profileError } = await supabaseUserClient
+      .from('users')
+      .select('organization_id')
+      .eq('id', requestor.id)
+      .single()
 
     if (profileError || !requestorProfile?.organization_id) {
       throw new Error('Organization not found for user')
@@ -53,17 +52,16 @@ Deno.serve(async (req: Request) => {
       throw new Error('Email e senha são obrigatórios')
     }
 
-    const { data: userData, error: createError } =
-      await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: {
-          name: name || '',
-          organization_id: requestorProfile.organization_id,
-          role: role || 'vendedor',
-        },
-      })
+    const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        name: name || '',
+        organization_id: requestorProfile.organization_id,
+        role: role || 'vendedor',
+      },
+    })
 
     if (createError) throw createError
 

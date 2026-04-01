@@ -27,7 +27,6 @@ async function processAiResponse(
       return
     }
 
-    // REQUIREMENT: AI Agent must be explicitly assigned to the contact. Disabled by default.
     if (!contact.ai_agent_id) {
       console.log(
         `[AI Handler] Exiting: AI agent is disabled by default for contact ${contactId}. No ai_agent_id assigned.`,
@@ -35,9 +34,6 @@ async function processAiResponse(
       return
     }
 
-    console.log(
-      `[AI Handler] Contact has agent assigned: ${contact.ai_agent_id}. Checking if active...`,
-    )
     const { data: agent, error: agentError } = await supabase
       .from('ai_agents')
       .select('*')
@@ -45,24 +41,10 @@ async function processAiResponse(
       .eq('is_active', true)
       .single()
 
-    if (agentError || !agent) {
-      console.log(
-        `[AI Handler] Exiting: Assigned agent ${contact.ai_agent_id} is either inactive, deleted, or error loading.`,
-      )
-      return
-    }
-
-    console.log(
-      `[AI Handler] Agent selected: ${agent.id} (Name: "${agent.name}", is_active: ${agent.is_active})`,
-    )
+    if (agentError || !agent) return
 
     const apiKey = agent.gemini_api_key || Deno.env.get('GEMINI_API_KEY')
-    if (!apiKey) {
-      console.error(
-        `[AI Handler] Exiting: GEMINI_API_KEY missing from agent and environment secrets.`,
-      )
-      return
-    }
+    if (!apiKey) return
 
     const { data: messages } = await supabase
       .from('whatsapp_messages')
@@ -71,14 +53,7 @@ async function processAiResponse(
       .order('timestamp', { ascending: false })
       .limit(12)
 
-    if (!messages || messages.length === 0) {
-      console.log(
-        `[AI Handler] Exiting: No messages found for contact ${contactId} (remote_jid: ${contact.remote_jid}).`,
-      )
-      return
-    }
-
-    console.log(`[AI Handler] Retrieved ${messages.length} messages for context.`)
+    if (!messages || messages.length === 0) return
 
     const history = messages
       .reverse()
@@ -98,41 +73,22 @@ ${history}
 `
 
     const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`
-    console.log(`[AI Handler] Calling Gemini API at v1/models/gemini-2.5-flash...`)
 
     const aiRes = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 800,
-        },
+        generationConfig: { temperature: 0.7, maxOutputTokens: 800 },
       }),
     })
 
-    if (!aiRes.ok) {
-      const errText = await aiRes.text()
-      console.error(
-        `[AI Handler] Exiting: Gemini API error for contact ${contactId} (remote_jid: ${contact.remote_jid}): Status ${aiRes.status} - Details:`,
-        errText,
-      )
-      return
-    }
+    if (!aiRes.ok) return
 
     const aiData = await aiRes.json()
     const responseText = aiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
 
-    if (!responseText) {
-      console.error(
-        `[AI Handler] Exiting: Empty response from Gemini API for contact ${contactId}. Raw response:`,
-        JSON.stringify(aiData),
-      )
-      return
-    }
-
-    console.log(`[AI Handler] Gemini generated text: "${responseText}"`)
+    if (!responseText) return
 
     const { data: integration } = await supabase
       .from('user_integrations')
@@ -140,47 +96,54 @@ ${history}
       .eq('user_id', userId)
       .single()
 
-    if (!integration || !integration.instance_name) {
-      console.error(
-        `[AI Handler] Exiting: Missing integration details or instance_name for user ${userId}.`,
-      )
-      return
+    if (!integration || !integration.instance_name) return
+
+    const evoUrlRaw = integration.evolution_api_url || Deno.env.get('EVOLUTION_API_URL') || ''
+    const evoUrl = evoUrlRaw.replace(/\/$/, '')
+    const evoKey = integration.evolution_api_key || Deno.env.get('EVOLUTION_API_KEY') || ''
+    const isZapi =
+      evoUrlRaw.includes('z-api.io') || !evoUrlRaw.startsWith('http') || evoUrlRaw.includes('zapi')
+
+    let sendRes
+    let result
+    let messageId
+
+    if (isZapi) {
+      const clientToken = evoUrlRaw.startsWith('http') ? '' : evoUrlRaw
+      const baseUrl = evoUrlRaw.startsWith('http')
+        ? evoUrl
+        : `https://api.z-api.io/instances/${integration.instance_name}/token/${evoKey}`
+      const cleanPhone = contact.remote_jid.replace('@s.whatsapp.net', '')
+
+      const headers: any = { 'Content-Type': 'application/json' }
+      if (clientToken) headers['Client-Token'] = clientToken
+
+      sendRes = await fetch(`${baseUrl}/send-text`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ phone: cleanPhone, message: responseText }),
+      })
+
+      if (!sendRes.ok) {
+        console.error(`[AI Handler] Failed to send via Z-API:`, await sendRes.text())
+        return
+      }
+      result = await sendRes.json()
+      messageId = result.messageId || result.id || crypto.randomUUID()
+    } else {
+      sendRes = await fetch(`${evoUrl}/message/sendText/${integration.instance_name}`, {
+        method: 'POST',
+        headers: { apikey: evoKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ number: contact.remote_jid, text: responseText }),
+      })
+
+      if (!sendRes.ok) {
+        console.error(`[AI Handler] Failed to send via Evolution API:`, await sendRes.text())
+        return
+      }
+      result = await sendRes.json()
+      messageId = result?.key?.id || result?.id || crypto.randomUUID()
     }
-
-    const evoUrl = (
-      integration.evolution_api_url ||
-      Deno.env.get('EVOLUTION_API_URL') ||
-      ''
-    ).replace(/\/$/, '')
-    const evoKey = integration.evolution_api_key || Deno.env.get('EVOLUTION_API_KEY')
-
-    console.log(
-      `[AI Handler] Attempting to send message to Evolution API. Phone: ${contact.remote_jid}`,
-    )
-
-    const sendRes = await fetch(`${evoUrl}/message/sendText/${integration.instance_name}`, {
-      method: 'POST',
-      headers: {
-        apikey: evoKey || '',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        number: contact.remote_jid,
-        text: responseText,
-      }),
-    })
-
-    if (!sendRes.ok) {
-      const errText = await sendRes.text()
-      console.error(
-        `[AI Handler] Exiting: Failed to send message via Evolution API. HTTP Response: ${sendRes.status} Error:`,
-        errText,
-      )
-      return
-    }
-
-    const result = await sendRes.json()
-    const messageId = result?.key?.id || result?.id || crypto.randomUUID()
 
     await supabase.from('whatsapp_messages').upsert(
       {
@@ -198,13 +161,10 @@ ${history}
 
     await supabase
       .from('whatsapp_contacts')
-      .update({
-        pipeline_stage: 'Em Conversa',
-        last_message_at: new Date().toISOString(),
-      })
+      .update({ pipeline_stage: 'Em Conversa', last_message_at: new Date().toISOString() })
       .eq('id', contactId)
 
-    console.log(`[AI Handler] Successfully auto-responded to contact ${contactId} and saved to DB.`)
+    console.log(`[AI Handler] Successfully auto-responded to contact ${contactId}`)
   } catch (error) {
     console.error('[AI Handler] Unhandled exception in processAiResponse:', error)
   }
@@ -212,7 +172,6 @@ ${history}
 
 function extractCanonicalPhone(data: any): string | null {
   if (!data) return null
-  
   const jidFields = ['remoteJid', 'jid']
   for (const field of jidFields) {
     const val = data[field]
@@ -221,9 +180,8 @@ function extractCanonicalPhone(data: any): string | null {
         const extracted = val.split('@')[0]
         if (/^\d+$/.test(extracted)) return extracted
       }
-      if (val.includes('@lid') || val.includes('@g.us') || val.includes('status@broadcast')) {
+      if (val.includes('@lid') || val.includes('@g.us') || val.includes('status@broadcast'))
         continue
-      }
     }
   }
 
@@ -244,23 +202,33 @@ function extractCanonicalPhone(data: any): string | null {
 Deno.serve(async (req: Request) => {
   try {
     const payload = await req.json()
-
-    // Feature: Webhook Ingress Logging
     console.log('[WEBHOOK] INGRESS PAYLOAD:', JSON.stringify(payload))
 
-    const instanceName = payload.instance
-    const event = payload.event?.toLowerCase()
+    const isZapi = !!payload.instanceId
+    const instanceName = payload.instance || payload.instanceId
 
     if (!instanceName) {
-      console.log('[WEBHOOK] Ignored: No instance provided in payload')
+      console.log('[WEBHOOK] Ignored: No instance provided')
       return new Response('No instance provided', { status: 200 })
     }
 
-    console.log(`[WEBHOOK] Processing event: ${event} for instance: ${instanceName}`)
+    let event = payload.event?.toLowerCase()
+
+    if (isZapi) {
+      if (payload.messageId && payload.phone) {
+        if (payload.status && payload.status !== 'RECEIVED') {
+          event = 'messages.update'
+        } else {
+          event = 'messages.upsert'
+        }
+      } else if (payload.status === 'CONNECTED' || payload.status === 'DISCONNECTED') {
+        event = 'connection.update'
+        payload.data = { state: payload.status === 'CONNECTED' ? 'open' : 'close' }
+      }
+    }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || ''
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     const cleanInstanceName = instanceName.trim()
@@ -269,7 +237,7 @@ Deno.serve(async (req: Request) => {
       .select('id, user_id')
       .ilike('instance_name', cleanInstanceName)
       .maybeSingle()
-      
+
     if (!integ) {
       const { data: exactInteg } = await supabase
         .from('user_integrations')
@@ -288,13 +256,11 @@ Deno.serve(async (req: Request) => {
     if (event === 'connection.update') {
       const state = payload.data?.state
       if (state === 'open') {
-        console.log(`[WEBHOOK] Instance ${instanceName} connected.`)
         await supabase
           .from('user_integrations')
           .update({ status: 'CONNECTED' })
           .eq('user_id', userId)
       } else if (state === 'close') {
-        console.log(`[WEBHOOK] Instance ${instanceName} disconnected.`)
         await supabase
           .from('user_integrations')
           .update({ status: 'DISCONNECTED' })
@@ -306,80 +272,98 @@ Deno.serve(async (req: Request) => {
       })
     }
 
+    if (event === 'messages.update' && isZapi) {
+      const statusMap: Record<string, string> = {
+        SENT: 'sent',
+        DELIVERED: 'delivered',
+        READ: 'read',
+        ERROR: 'error',
+      }
+      const mappedStatus = statusMap[payload.status]
+      if (mappedStatus && payload.messageId) {
+        await supabase
+          .from('messages')
+          .update({
+            status: mappedStatus,
+            is_read: mappedStatus === 'read',
+          })
+          .eq('wa_message_id', payload.messageId)
+      }
+      return new Response(JSON.stringify({ success: true }), { status: 200 })
+    }
+
     if (event === 'messages.upsert') {
-      let msgObj = payload.data
+      let msgObj: any, remoteJid, messageId, fromMe, pushName, canonicalPhone, type, text, timestamp
 
-      if (Array.isArray(msgObj)) {
-        msgObj = msgObj[0]
-      } else if (msgObj && Array.isArray(msgObj.messages)) {
-        msgObj = msgObj.messages[0]
-      }
-
-      if (msgObj && !msgObj.key && msgObj.message && msgObj.message.key) {
-        msgObj = msgObj.message
-      }
-
-      if (!msgObj) {
-        console.log('[WEBHOOK] Ignored: No valid message object found in payload.')
-        return new Response('No message data', { status: 200 })
-      }
-
-      const key = msgObj.key || {}
-      const remoteJid = key.remoteJid || msgObj.remoteJid || msgObj.jid
-      const messageId = key.id || msgObj.id
-      const fromMe = key.fromMe !== undefined ? key.fromMe : msgObj.fromMe || false
-
-      if (!remoteJid) {
-        console.log(
-          `[WEBHOOK] Ignored: No remoteJid found in message data (instance: ${instanceName})`,
-        )
-        return new Response('Ignored - No remoteJid', { status: 200 })
-      }
-
-      if (remoteJid === 'status@broadcast' || remoteJid.includes('@g.us')) {
-        console.log(
-          `[WEBHOOK] Ignored: Message from Broadcast or Group (remoteJid: ${remoteJid}, instance: ${instanceName})`,
-        )
-        return new Response('Ignored - Broadcast/Group', { status: 200 })
-      }
-
-      if (!messageId) {
-        console.log(
-          `[WEBHOOK] Ignored: No messageId found for remoteJid ${remoteJid} (instance: ${instanceName})`,
-        )
-        return new Response('Ignored - No messageId', { status: 200 })
-      }
-
-      const pushName = msgObj.pushName || msgObj.verifiedName || msgObj.name || 'Unknown'
-      const canonicalPhone = extractCanonicalPhone({ remoteJid, ...msgObj, ...key })
-
-      let type = 'text'
-      let text = '[Media/Unsupported]'
-
-      const content = msgObj.message
-      if (typeof content === 'string') {
-        text = content
-      } else if (content && typeof content === 'object') {
+      if (isZapi) {
+        msgObj = payload
+        remoteJid = payload.phone?.includes('@') ? payload.phone : `${payload.phone}@s.whatsapp.net`
+        messageId = payload.messageId
+        fromMe = payload.fromMe || false
+        pushName = payload.senderName || payload.chatName || 'Unknown'
+        canonicalPhone = extractCanonicalPhone({ phone: payload.phone })
+        type = payload.type?.toLowerCase() || 'text'
         text =
-          content.conversation ||
-          content.extendedTextMessage?.text ||
-          content.imageMessage?.caption ||
-          content.videoMessage?.caption ||
-          content.documentMessage?.caption ||
-          msgObj.text ||
-          '[Media/Unsupported]'
+          payload.text?.message ||
+          payload.audio?.caption ||
+          payload.image?.caption ||
+          payload.document?.caption ||
+          payload.video?.caption ||
+          (typeof payload.text === 'string' ? payload.text : '[Media/Unsupported]')
+        timestamp = new Date(payload.momment || Date.now()).toISOString()
 
-        type = Object.keys(content).filter((k: string) => k !== 'messageContextInfo')[0] || 'text'
-      } else if (msgObj.text) {
-        text = msgObj.text
-      }
+        if (payload.isGroup || remoteJid.includes('@g.us')) {
+          console.log('[WEBHOOK] Ignored: Group message')
+          return new Response('Ignored - Group', { status: 200 })
+        }
+      } else {
+        msgObj = payload.data
+        if (Array.isArray(msgObj)) msgObj = msgObj[0]
+        else if (msgObj && Array.isArray(msgObj.messages)) msgObj = msgObj.messages[0]
+        if (msgObj && !msgObj.key && msgObj.message && msgObj.message.key) msgObj = msgObj.message
 
-      const ts = msgObj.messageTimestamp || msgObj.timestamp
-      let timestamp = new Date().toISOString()
-      if (ts) {
-        const numTs = typeof ts === 'string' ? parseInt(ts, 10) : ts
-        if (numTs > 0) {
-          timestamp = new Date(numTs < 100000000000 ? numTs * 1000 : numTs).toISOString()
+        if (!msgObj) return new Response('No message data', { status: 200 })
+
+        const key = msgObj.key || {}
+        remoteJid = key.remoteJid || msgObj.remoteJid || msgObj.jid
+        messageId = key.id || msgObj.id
+        fromMe = key.fromMe !== undefined ? key.fromMe : msgObj.fromMe || false
+
+        if (
+          !remoteJid ||
+          remoteJid === 'status@broadcast' ||
+          remoteJid.includes('@g.us') ||
+          !messageId
+        ) {
+          return new Response('Ignored', { status: 200 })
+        }
+
+        pushName = msgObj.pushName || msgObj.verifiedName || msgObj.name || 'Unknown'
+        canonicalPhone = extractCanonicalPhone({ remoteJid, ...msgObj, ...key })
+
+        type = 'text'
+        text = '[Media/Unsupported]'
+
+        const content = msgObj.message
+        if (typeof content === 'string') text = content
+        else if (content && typeof content === 'object') {
+          text =
+            content.conversation ||
+            content.extendedTextMessage?.text ||
+            content.imageMessage?.caption ||
+            content.videoMessage?.caption ||
+            content.documentMessage?.caption ||
+            msgObj.text ||
+            '[Media/Unsupported]'
+          type = Object.keys(content).filter((k: string) => k !== 'messageContextInfo')[0] || 'text'
+        } else if (msgObj.text) text = msgObj.text
+
+        const ts = msgObj.messageTimestamp || msgObj.timestamp
+        timestamp = new Date().toISOString()
+        if (ts) {
+          const numTs = typeof ts === 'string' ? parseInt(ts, 10) : ts
+          if (numTs > 0)
+            timestamp = new Date(numTs < 100000000000 ? numTs * 1000 : numTs).toISOString()
         }
       }
 
@@ -429,9 +413,8 @@ Deno.serve(async (req: Request) => {
           updates.lid_jid = remoteJid
         if (remoteJid.includes('@s.whatsapp.net') && identity.phone_jid !== remoteJid)
           updates.phone_jid = remoteJid
-        if (Object.keys(updates).length > 0) {
+        if (Object.keys(updates).length > 0)
           await supabase.from('contact_identity').update(updates).eq('id', identity.id)
-        }
       }
 
       const effectivePhone = identity?.canonical_phone || canonicalPhone
@@ -487,15 +470,11 @@ Deno.serve(async (req: Request) => {
           pushName &&
           pushName !== 'Unknown' &&
           (!contact.push_name || contact.push_name === 'Unknown' || /^\d+$/.test(contact.push_name))
-        ) {
+        )
           updatePayload.push_name = pushName
-        }
-        if (effectivePhone && !contact.phone_number) {
-          updatePayload.phone_number = effectivePhone
-        }
-        if (Object.keys(updatePayload).length > 0) {
+        if (effectivePhone && !contact.phone_number) updatePayload.phone_number = effectivePhone
+        if (Object.keys(updatePayload).length > 0)
           await supabase.from('whatsapp_contacts').update(updatePayload).eq('id', contact.id)
-        }
       }
 
       // --- START DEALS CRM SYNC ---
@@ -509,9 +488,8 @@ Deno.serve(async (req: Request) => {
 
         if (!deal) {
           const cleanEffPhone = effectivePhone.replace(/\D/g, '')
-          let ddd = ''
-          let last8 = ''
-          
+          let ddd = '',
+            last8 = ''
           if (cleanEffPhone.startsWith('55') && cleanEffPhone.length >= 12) {
             ddd = cleanEffPhone.substring(2, 4)
             last8 = cleanEffPhone.slice(-8)
@@ -519,40 +497,41 @@ Deno.serve(async (req: Request) => {
             ddd = cleanEffPhone.substring(0, 2)
             last8 = cleanEffPhone.slice(-8)
           }
-          
+
           if (ddd && last8) {
-             const { data: possibleDeals } = await supabase
-               .from('deals')
-               .select('id, phone')
-               .ilike('phone', `%${last8}%`)
-               .limit(50);
-             
-             if (possibleDeals && possibleDeals.length > 0) {
-                for (const pd of possibleDeals) {
-                   if (!pd.phone) continue;
-                   const cleanDbPhone = pd.phone.replace(/\D/g, '');
-                   let dbDdd = '';
-                   let dbLast8 = '';
-                   if (cleanDbPhone.startsWith('55') && cleanDbPhone.length >= 12) {
-                     dbDdd = cleanDbPhone.substring(2, 4)
-                     dbLast8 = cleanDbPhone.slice(-8)
-                   } else if (cleanDbPhone.length >= 10) {
-                     dbDdd = cleanDbPhone.substring(0, 2)
-                     dbLast8 = cleanDbPhone.slice(-8)
-                   }
-                   
-                   if (ddd === dbDdd && last8 === dbLast8) {
-                      deal = pd;
-                      break;
-                   }
+            const { data: possibleDeals } = await supabase
+              .from('deals')
+              .select('id, phone')
+              .ilike('phone', `%${last8}%`)
+              .limit(50)
+            if (possibleDeals && possibleDeals.length > 0) {
+              for (const pd of possibleDeals) {
+                if (!pd.phone) continue
+                const cleanDbPhone = pd.phone.replace(/\D/g, '')
+                let dbDdd = '',
+                  dbLast8 = ''
+                if (cleanDbPhone.startsWith('55') && cleanDbPhone.length >= 12) {
+                  dbDdd = cleanDbPhone.substring(2, 4)
+                  dbLast8 = cleanDbPhone.slice(-8)
+                } else if (cleanDbPhone.length >= 10) {
+                  dbDdd = cleanDbPhone.substring(0, 2)
+                  dbLast8 = cleanDbPhone.slice(-8)
                 }
-             }
+                if (ddd === dbDdd && last8 === dbLast8) {
+                  deal = pd
+                  break
+                }
+              }
+            }
           }
         }
 
         if (deal) {
           dealId = deal.id
-          await supabase.from('deals').update({ updated_at: new Date().toISOString() }).eq('id', deal.id)
+          await supabase
+            .from('deals')
+            .update({ updated_at: new Date().toISOString() })
+            .eq('id', deal.id)
         } else {
           const { data: newDeal } = await supabase
             .from('deals')
@@ -574,7 +553,6 @@ Deno.serve(async (req: Request) => {
           .select('id')
           .eq('wa_message_id', messageId)
           .maybeSingle()
-
         if (!existingMsg) {
           await supabase.from('messages').insert({
             deal_id: dealId,
@@ -603,37 +581,20 @@ Deno.serve(async (req: Request) => {
           { onConflict: 'user_id,message_id' },
         )
 
-        if (insertError) {
-          console.error(`[WEBHOOK] Error inserting message ${messageId}:`, insertError)
-        } else {
-          console.log(
-            `[WEBHOOK] Successfully saved message ${messageId} for contact ${contact.id} (remoteJid: ${effectiveJid})`,
-          )
-
-          if (fromMe) {
-            console.log(
-              `[WEBHOOK] Skip AI processing: Message is from me (remoteJid: ${effectiveJid}, instance: ${instanceName})`,
-            )
-          } else if (!['text', 'conversation', 'extendedTextMessage'].includes(type)) {
-            console.log(
-              `[WEBHOOK] Skip AI processing: Message type is not text/conversation (type: ${type}, remoteJid: ${effectiveJid}, instance: ${instanceName})`,
+        if (
+          !insertError &&
+          !fromMe &&
+          ['text', 'conversation', 'extendedTextMessage'].includes(type)
+        ) {
+          if (
+            typeof (globalThis as any).EdgeRuntime !== 'undefined' &&
+            typeof (globalThis as any).EdgeRuntime.waitUntil === 'function'
+          ) {
+            ;(globalThis as any).EdgeRuntime.waitUntil(
+              processAiResponse(userId, contact.id, supabaseUrl, supabaseKey),
             )
           } else {
-            console.log(
-              `[WEBHOOK] Triggering background AI task for contact ${contact.id} (remoteJid: ${effectiveJid})`,
-            )
-            if (
-              typeof (globalThis as any).EdgeRuntime !== 'undefined' &&
-              typeof (globalThis as any).EdgeRuntime.waitUntil === 'function'
-            ) {
-              ;(globalThis as any).EdgeRuntime.waitUntil(
-                processAiResponse(userId, contact.id, supabaseUrl, supabaseKey),
-              )
-            } else {
-              processAiResponse(userId, contact.id, supabaseUrl, supabaseKey).catch((err: any) =>
-                console.error('[WEBHOOK] Background AI task failed:', err),
-              )
-            }
+            processAiResponse(userId, contact.id, supabaseUrl, supabaseKey).catch(console.error)
           }
         }
       }
@@ -644,7 +605,7 @@ Deno.serve(async (req: Request) => {
       headers: { 'Content-Type': 'application/json' },
     })
   } catch (error: any) {
-    console.error('[WEBHOOK] Critical Webhook error:', error)
+    console.error('[WEBHOOK] Error:', error)
     return new Response('Webhook Error', { status: 500 })
   }
 })
