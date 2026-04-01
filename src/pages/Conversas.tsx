@@ -79,7 +79,18 @@ export default function Conversas() {
           filter: `deal_id=eq.${selectedChat}`,
         },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new])
+          setMessages((prev) => {
+            // Prevent duplicated optimistic messages when realtime hits
+            if (
+              prev.some(
+                (m) =>
+                  m.id === payload.new.id ||
+                  (m.text === payload.new.text && m.created_at === payload.new.created_at),
+              )
+            )
+              return prev
+            return [...prev, payload.new]
+          })
           setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
         },
       )
