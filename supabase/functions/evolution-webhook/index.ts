@@ -1,6 +1,12 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
-import { corsHeaders } from '../_shared/cors.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
@@ -78,19 +84,22 @@ Deno.serve(async (req: Request) => {
           // If the message is "fromMe", it might have been sent by the CRM interface just now.
           // To avoid duplicates, we check if an identical message was logged very recently.
           if (fromMe) {
-            const fewSecondsAgo = new Date(Date.now() - 30000).toISOString()
             const { data: recent } = await supabase
               .from('messages')
-              .select('id')
+              .select('id, created_at')
               .eq('deal_id', deal.id)
               .eq('text', text)
               .eq('sender_type', 'attendant')
-              .gte('created_at', fewSecondsAgo)
+              .order('created_at', { ascending: false })
               .limit(1)
 
             if (recent && recent.length > 0) {
-              shouldInsert = false
-              console.log('Skipping duplicate fromMe message (already sent via CRM)')
+              const msgTime = new Date(recent[0].created_at).getTime()
+              const now = Date.now()
+              if (Math.abs(now - msgTime) < 120000) {
+                shouldInsert = false
+                console.log('Skipping duplicate fromMe message (already sent via CRM)')
+              }
             }
           }
 

@@ -86,11 +86,11 @@ export default function Conversas() {
                 (m) =>
                   m.id === payload.new.id ||
                   // Prevent duplication if the exact same message was sent very recently (within 30s)
-                  (m.text === payload.new.text &&
+                  ((m.text || '').trim() === (payload.new.text || '').trim() &&
                     m.sender_type === payload.new.sender_type &&
                     Math.abs(
                       new Date(m.created_at).getTime() - new Date(payload.new.created_at).getTime(),
-                    ) < 30000),
+                    ) < 120000),
               )
             )
               return prev
