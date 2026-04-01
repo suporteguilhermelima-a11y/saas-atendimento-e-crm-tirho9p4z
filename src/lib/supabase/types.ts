@@ -1,11 +1,17 @@
 // AVOID UPDATING THIS FILE DIRECTLY. It is automatically generated.
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: '14.4'
+    PostgrestVersion: "14.4"
   }
   public: {
     Tables: {
@@ -75,18 +81,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'appointments_deal_id_fkey'
-            columns: ['deal_id']
+            foreignKeyName: "appointments_deal_id_fkey"
+            columns: ["deal_id"]
             isOneToOne: false
-            referencedRelation: 'deals'
-            referencedColumns: ['id']
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'appointments_specialist_id_fkey'
-            columns: ['specialist_id']
+            foreignKeyName: "appointments_specialist_id_fkey"
+            columns: ["specialist_id"]
             isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -153,11 +159,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'contact_identity_instance_id_fkey'
-            columns: ['instance_id']
+            foreignKeyName: "contact_identity_instance_id_fkey"
+            columns: ["instance_id"]
             isOneToOne: false
-            referencedRelation: 'user_integrations'
-            referencedColumns: ['id']
+            referencedRelation: "user_integrations"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -197,11 +203,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'deals_attendant_id_fkey'
-            columns: ['attendant_id']
+            foreignKeyName: "deals_attendant_id_fkey"
+            columns: ["attendant_id"]
             isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -265,18 +271,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'interactions_lead_id_fkey'
-            columns: ['lead_id']
+            foreignKeyName: "interactions_lead_id_fkey"
+            columns: ["lead_id"]
             isOneToOne: false
-            referencedRelation: 'leads'
-            referencedColumns: ['id']
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'interactions_user_id_fkey'
-            columns: ['user_id']
+            foreignKeyName: "interactions_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
+            referencedRelation: "users"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -322,11 +328,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'leads_created_by_fkey'
-            columns: ['created_by']
+            foreignKeyName: "leads_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
+            referencedRelation: "users"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -366,18 +372,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'messages_deal_id_fkey'
-            columns: ['deal_id']
+            foreignKeyName: "messages_deal_id_fkey"
+            columns: ["deal_id"]
             isOneToOne: false
-            referencedRelation: 'deals'
-            referencedColumns: ['id']
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'messages_sender_id_fkey'
-            columns: ['sender_id']
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
             isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -388,7 +394,7 @@ export type Database = {
           email: string
           id: string
           name: string
-          role: Database['public']['Enums']['user_role']
+          role: Database["public"]["Enums"]["user_role"]
         }
         Insert: {
           avatar_url?: string | null
@@ -396,7 +402,7 @@ export type Database = {
           email: string
           id: string
           name: string
-          role?: Database['public']['Enums']['user_role']
+          role?: Database["public"]["Enums"]["user_role"]
         }
         Update: {
           avatar_url?: string | null
@@ -404,7 +410,7 @@ export type Database = {
           email?: string
           id?: string
           name?: string
-          role?: Database['public']['Enums']['user_role']
+          role?: Database["public"]["Enums"]["user_role"]
         }
         Relationships: []
       }
@@ -450,18 +456,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'proposals_created_by_fkey'
-            columns: ['created_by']
+            foreignKeyName: "proposals_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
+            referencedRelation: "users"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'proposals_lead_id_fkey'
-            columns: ['lead_id']
+            foreignKeyName: "proposals_lead_id_fkey"
+            columns: ["lead_id"]
             isOneToOne: false
-            referencedRelation: 'leads'
-            referencedColumns: ['id']
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -495,18 +501,18 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'tasks_lead_id_fkey'
-            columns: ['lead_id']
+            foreignKeyName: "tasks_lead_id_fkey"
+            columns: ["lead_id"]
             isOneToOne: false
-            referencedRelation: 'leads'
-            referencedColumns: ['id']
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: 'tasks_user_id_fkey'
-            columns: ['user_id']
+            foreignKeyName: "tasks_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: 'users'
-            referencedColumns: ['id']
+            referencedRelation: "users"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -639,11 +645,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'whatsapp_contacts_ai_agent_id_fkey'
-            columns: ['ai_agent_id']
+            foreignKeyName: "whatsapp_contacts_ai_agent_id_fkey"
+            columns: ["ai_agent_id"]
             isOneToOne: false
-            referencedRelation: 'ai_agents'
-            referencedColumns: ['id']
+            referencedRelation: "ai_agents"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -686,11 +692,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'whatsapp_messages_contact_id_fkey'
-            columns: ['contact_id']
+            foreignKeyName: "whatsapp_messages_contact_id_fkey"
+            columns: ["contact_id"]
             isOneToOne: false
-            referencedRelation: 'whatsapp_contacts'
-            referencedColumns: ['id']
+            referencedRelation: "whatsapp_contacts"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -710,7 +716,7 @@ export type Database = {
       }
     }
     Enums: {
-      user_role: 'admin' | 'operational' | 'clinical'
+      user_role: "admin" | "operational" | "clinical"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -718,31 +724,33 @@ export type Database = {
   }
 }
 
-type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, 'public'>]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
-    ? (DefaultSchema['Tables'] & DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -751,23 +759,23 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
-    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -776,23 +784,23 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
-    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -801,45 +809,46 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema['Enums']
+    | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
-    ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema['CompositeTypes']
+    | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
-    ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
 export const Constants = {
   public: {
     Enums: {
-      user_role: ['admin', 'operational', 'clinical'],
+      user_role: ["admin", "operational", "clinical"],
     },
   },
 } as const
+
 
 // ====== DATABASE EXTENDED CONTEXT (auto-generated) ======
 // This section contains actual PostgreSQL column types, constraints, RLS policies,
@@ -1168,15 +1177,15 @@ export const Constants = {
 //   BEGIN
 //     INSERT INTO public.users (id, role, email, name)
 //     VALUES (
-//       NEW.id,
-//       'vendedor',
-//       NEW.email,
+//       NEW.id, 
+//       'vendedor', 
+//       NEW.email, 
 //       NEW.raw_user_meta_data->>'name'
 //     );
 //     RETURN NEW;
 //   END;
 //   $function$
-//
+//   
 // FUNCTION is_admin_or_manager()
 //   CREATE OR REPLACE FUNCTION public.is_admin_or_manager()
 //    RETURNS boolean
@@ -1189,12 +1198,12 @@ export const Constants = {
 //   BEGIN
 //     -- Get current user ID safely from the JWT claim
 //     current_user_id := nullif(current_setting('request.jwt.claim.sub', true), '')::uuid;
-//
+//     
 //     -- If no user is logged in, return false
 //     IF current_user_id IS NULL THEN
 //       RETURN FALSE;
 //     END IF;
-//
+//   
 //     -- Check role in users table
 //     -- Since this function is SECURITY DEFINER, it runs with the privileges of the owner (postgres),
 //     -- bypassing the RLS on the 'users' table which caused the recursion loop.
@@ -1205,7 +1214,7 @@ export const Constants = {
 //     );
 //   END;
 //   $function$
-//
+//   
 // FUNCTION merge_whatsapp_contacts(uuid, uuid, uuid[])
 //   CREATE OR REPLACE FUNCTION public.merge_whatsapp_contacts(p_user_id uuid, p_primary_contact_id uuid, p_secondary_contact_ids uuid[])
 //    RETURNS void
@@ -1218,14 +1227,14 @@ export const Constants = {
 //       SET contact_id = p_primary_contact_id
 //       WHERE user_id = p_user_id
 //         AND contact_id = ANY(p_secondary_contact_ids);
-//
+//   
 //       -- Delete the secondary duplicate contacts
 //       DELETE FROM public.whatsapp_contacts
 //       WHERE user_id = p_user_id
 //         AND id = ANY(p_secondary_contact_ids);
 //   END;
 //   $function$
-//
+//   
 // FUNCTION rls_auto_enable()
 //   CREATE OR REPLACE FUNCTION public.rls_auto_enable()
 //    RETURNS event_trigger
@@ -1256,7 +1265,7 @@ export const Constants = {
 //     END LOOP;
 //   END;
 //   $function$
-//
+//   
 // FUNCTION sync_user_details()
 //   CREATE OR REPLACE FUNCTION public.sync_user_details()
 //    RETURNS trigger
@@ -1271,7 +1280,7 @@ export const Constants = {
 //     RETURN NEW;
 //   END;
 //   $function$
-//
+//   
 
 // --- INDEXES ---
 // Table: user_integrations
@@ -1281,3 +1290,4 @@ export const Constants = {
 //   CREATE UNIQUE INDEX whatsapp_contacts_user_id_remote_jid_key ON public.whatsapp_contacts USING btree (user_id, remote_jid)
 // Table: whatsapp_messages
 //   CREATE UNIQUE INDEX whatsapp_messages_user_id_message_id_key ON public.whatsapp_messages USING btree (user_id, message_id)
+

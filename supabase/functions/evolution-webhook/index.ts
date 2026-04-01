@@ -263,7 +263,7 @@ Deno.serve(async (req: Request) => {
       .select('id, user_id')
       .ilike('instance_name', cleanInstanceName)
       .maybeSingle()
-
+      
     if (!integ) {
       const { data: exactInteg } = await supabase
         .from('user_integrations')
@@ -510,11 +510,7 @@ Deno.serve(async (req: Request) => {
             variations.push(`55${withoutCountry.substring(0, 2)}9${withoutCountry.substring(2)}`)
           }
           for (const v of variations) {
-            const { data: altDeal } = await supabase
-              .from('deals')
-              .select('id')
-              .eq('phone', v)
-              .maybeSingle()
+            const { data: altDeal } = await supabase.from('deals').select('id').eq('phone', v).maybeSingle()
             if (altDeal) {
               deal = altDeal
               break
@@ -524,10 +520,7 @@ Deno.serve(async (req: Request) => {
 
         if (deal) {
           dealId = deal.id
-          await supabase
-            .from('deals')
-            .update({ updated_at: new Date().toISOString() })
-            .eq('id', deal.id)
+          await supabase.from('deals').update({ updated_at: new Date().toISOString() }).eq('id', deal.id)
         } else {
           const { data: newDeal } = await supabase
             .from('deals')
