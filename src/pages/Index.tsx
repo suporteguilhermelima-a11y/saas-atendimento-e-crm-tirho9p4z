@@ -92,7 +92,7 @@ const rankingData = [
   {
     id: 'laisa',
     name: 'Dra. Laisa Chimello',
-    role: 'Médica',
+    role: 'Administradora',
     leads: 105,
     agendadas: 56,
     conv: 53.3,
@@ -101,7 +101,7 @@ const rankingData = [
   {
     id: 'paola',
     name: 'Dra. Paola',
-    role: 'Médica',
+    role: 'Clínica',
     leads: 80,
     agendadas: 40,
     conv: 50.0,
@@ -110,7 +110,7 @@ const rankingData = [
   {
     id: 'beatriz',
     name: 'Beatriz',
-    role: 'Gerente',
+    role: 'Administradora',
     leads: 41,
     agendadas: 21,
     conv: 51.2,
@@ -119,7 +119,7 @@ const rankingData = [
   {
     id: 'ana',
     name: 'Ana',
-    role: 'Comercial',
+    role: 'Operacional',
     leads: 30,
     agendadas: 14,
     conv: 46.6,
@@ -128,7 +128,7 @@ const rankingData = [
   {
     id: 'natalia',
     name: 'Natalia',
-    role: 'Secretária',
+    role: 'Operacional',
     leads: 18,
     agendadas: 12,
     conv: 66.6,
@@ -177,8 +177,8 @@ export default function Index() {
         <Activity className="w-16 h-16 text-primary mb-4" />
         <h2 className="text-3xl font-bold">Olá, {currentUser.name}</h2>
         <p className="text-muted-foreground max-w-md mx-auto">
-          Sua interface é otimizada para o atendimento de pacientes. Utilize o menu lateral ou
-          inferior para acessar as Conversas ou o CRM e dar andamento aos leads.
+          Sua interface é otimizada para o atendimento operacional. Acesse as abas de CRM e
+          Conversas no menu para gerenciar seus contatos no WhatsApp.
         </p>
       </div>
     )

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -29,7 +29,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useUser, TEAM } from '@/contexts/UserContext'
+import { useUser } from '@/contexts/UserContext'
+import { supabase } from '@/lib/supabase/client'
 
 const PIPELINE_STAGES = [
   { id: 'lead', title: 'Novo Lead', color: 'border-blue-200 bg-blue-50/50' },
@@ -41,122 +42,48 @@ const PIPELINE_STAGES = [
   { id: 'consulting', title: 'Consultoria', color: 'border-indigo-200 bg-indigo-50/50' },
 ]
 
-const ATTENDANTS = TEAM.filter((u) => ['ana', 'natalia'].includes(u.id))
-
-const INITIAL_DEALS = [
-  {
-    id: 1,
-    stage: 'lead',
-    name: 'Mariana Silva',
-    procedure: 'Avaliação Facial',
-    date: 'Hoje',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=1',
-    hoursInStage: 2,
-    attendant: 'ana',
-  },
-  {
-    id: 2,
-    stage: 'lead',
-    name: 'João Souza',
-    procedure: 'Tratamento Capilar',
-    date: 'Ontem',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=5',
-    hoursInStage: 24,
-    attendant: null,
-  },
-  {
-    id: 3,
-    stage: 'triage',
-    name: 'Carlos Santos',
-    procedure: 'Dúvidas Botox',
-    date: '3 dias atrás',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=2',
-    hoursInStage: 54, // Triggers alert (> 48h)
-    attendant: 'natalia',
-  },
-  {
-    id: 6,
-    stage: 'triage',
-    name: 'Fernanda Lima',
-    procedure: 'Avaliação',
-    date: 'Hoje',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=8',
-    hoursInStage: 12,
-    attendant: 'ana',
-  },
-  {
-    id: 4,
-    stage: 'scheduled',
-    name: 'Beatriz Almeida',
-    procedure: 'Preenchimento',
-    date: 'Dia 15/10 - 14h',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=12',
-    hoursInStage: 10,
-    attendant: 'natalia',
-  },
-  {
-    id: 7,
-    stage: 'return',
-    name: 'Roberto Costa',
-    procedure: 'Revisão Pós-Botox',
-    date: 'Semana que vem',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=15',
-    hoursInStage: 5,
-    attendant: 'ana',
-  },
-  {
-    id: 5,
-    stage: 'treatment',
-    name: 'Ana Oliveira',
-    procedure: 'Protocolo de Pele',
-    date: 'Em andamento',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=3',
-    hoursInStage: 120,
-    attendant: null,
-  },
-]
-
 export default function CRM() {
-  const { currentUser } = useUser()
-  const [deals, setDeals] = useState(INITIAL_DEALS)
+  const { currentUser, team } = useUser()
+  const [deals, setDeals] = useState<any[]>([])
   const [attendantFilter, setAttendantFilter] = useState('all')
 
-  const handleDragStart = (e: React.DragEvent, dealId: number) => {
-    e.dataTransfer.setData('dealId', dealId.toString())
-  }
+  const attendants = team.filter((u) => u.role === 'operational')
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-  }
-
-  const handleDrop = (e: React.DragEvent, stageId: string) => {
-    e.preventDefault()
-    const dealIdStr = e.dataTransfer.getData('dealId')
-    if (!dealIdStr) return
-    const dealId = parseInt(dealIdStr, 10)
-
-    setDeals((currentDeals) =>
-      currentDeals.map((deal) =>
-        deal.id === dealId ? { ...deal, stage: stageId, hoursInStage: 0 } : deal,
-      ),
-    )
-  }
-
-  const handleAssignAttendant = (dealId: number, attendantId: string) => {
-    setDeals((currentDeals) =>
-      currentDeals.map((deal) => (deal.id === dealId ? { ...deal, attendant: attendantId } : deal)),
-    )
-  }
-
-  // Filter based on role and active filter
-  const visibleDeals = deals.filter((deal) => {
-    if (attendantFilter !== 'all') {
-      return deal.attendant === attendantFilter
+  useEffect(() => {
+    const fetchDeals = async () => {
+      const { data } = await supabase.from('deals').select('*')
+      if (data) setDeals(data)
     }
-    return true
-  })
+    fetchDeals()
+    const channel = supabase
+      .channel('crm_deals')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'deals' }, fetchDeals)
+      .subscribe()
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [])
 
-  // Clinical view optimization
+  const handleDragStart = (e: React.DragEvent, dealId: string) => {
+    e.dataTransfer.setData('dealId', dealId)
+  }
+
+  const handleDrop = async (e: React.DragEvent, stageId: string) => {
+    e.preventDefault()
+    const dealId = e.dataTransfer.getData('dealId')
+    if (!dealId) return
+    setDeals((curr) => curr.map((d) => (d.id === dealId ? { ...d, stage: stageId } : d)))
+    await supabase.from('deals').update({ stage: stageId }).eq('id', dealId)
+  }
+
+  const handleAssignAttendant = async (dealId: string, attendantId: string) => {
+    setDeals((curr) => curr.map((d) => (d.id === dealId ? { ...d, attendant_id: attendantId } : d)))
+    await supabase.from('deals').update({ attendant_id: attendantId }).eq('id', dealId)
+  }
+
+  const visibleDeals = deals.filter(
+    (deal) => attendantFilter === 'all' || deal.attendant_id === attendantFilter,
+  )
   const visibleStages =
     currentUser.role === 'clinical'
       ? PIPELINE_STAGES.filter((s) =>
@@ -185,7 +112,7 @@ export default function CRM() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos Atendentes</SelectItem>
-                  {ATTENDANTS.map((att) => (
+                  {attendants.map((att) => (
                     <SelectItem key={att.id} value={att.id}>
                       {att.name}
                     </SelectItem>
@@ -194,14 +121,6 @@ export default function CRM() {
               </Select>
             </div>
           )}
-          <Button variant="outline" className="w-full sm:w-auto hidden sm:flex">
-            Visualização em Lista
-          </Button>
-          {currentUser.role !== 'clinical' && (
-            <Button className="w-full sm:w-auto">
-              <Plus className="w-4 h-4 mr-2" /> Novo Prontuário
-            </Button>
-          )}
         </div>
       </div>
 
@@ -209,12 +128,11 @@ export default function CRM() {
         <div className="flex gap-6 h-full min-w-max animate-fade-in">
           {visibleStages.map((stage) => {
             const stageDeals = visibleDeals.filter((deal) => deal.stage === stage.id)
-
             return (
               <div
                 key={stage.id}
                 className="flex flex-col w-80 shrink-0"
-                onDragOver={currentUser.role !== 'clinical' ? handleDragOver : undefined}
+                onDragOver={(e) => e.preventDefault()}
                 onDrop={
                   currentUser.role !== 'clinical' ? (e) => handleDrop(e, stage.id) : undefined
                 }
@@ -230,13 +148,9 @@ export default function CRM() {
                     {stageDeals.length}
                   </Badge>
                 </div>
-
                 <div className="flex-1 flex flex-col gap-3 min-h-[200px] rounded-xl bg-muted/30 p-2 border border-dashed border-transparent hover:border-border/50 transition-colors">
                   {stageDeals.map((deal) => {
-                    // Logic for Recovery Alerts
-                    const isStagnant = deal.stage === 'triage' && deal.hoursInStage > 48
-                    const attendantUser = ATTENDANTS.find((a) => a.id === deal.attendant)
-
+                    const attendantUser = attendants.find((a) => a.id === deal.attendant_id)
                     return (
                       <Card
                         key={deal.id}
@@ -247,30 +161,21 @@ export default function CRM() {
                             : undefined
                         }
                         className={cn(
-                          'cursor-grab active:cursor-grabbing hover:shadow-md transition-all group relative',
-                          isStagnant
-                            ? 'border-destructive/60 shadow-sm bg-destructive/5'
-                            : 'border-border/50 bg-card',
+                          'cursor-grab active:cursor-grabbing hover:shadow-md transition-all group relative border-border/50 bg-card',
                           currentUser.role === 'clinical' && 'cursor-default active:cursor-default',
                         )}
                       >
-                        {isStagnant && currentUser.role !== 'clinical' && (
-                          <div className="absolute -top-2.5 -right-2 bg-destructive text-destructive-foreground text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shadow-sm animate-pulse z-10">
-                            <AlertTriangle className="w-3 h-3" /> &gt;48h Retido
-                          </div>
-                        )}
                         <div className="p-3">
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex items-center gap-2">
                               <Avatar className="w-6 h-6">
-                                <AvatarImage src={deal.avatar} />
-                                <AvatarFallback>{deal.name.charAt(0)}</AvatarFallback>
+                                <AvatarImage src={deal.avatar_url} />
+                                <AvatarFallback>{deal.name?.charAt(0)}</AvatarFallback>
                               </Avatar>
                               <span className="font-medium text-sm leading-none truncate max-w-[140px]">
                                 {deal.name}
                               </span>
                             </div>
-
                             {currentUser.role !== 'clinical' && (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -287,13 +192,13 @@ export default function CRM() {
                                     Atribuir Atendente
                                   </DropdownMenuLabel>
                                   <DropdownMenuSeparator />
-                                  {ATTENDANTS.map((att) => (
+                                  {attendants.map((att) => (
                                     <DropdownMenuItem
                                       key={att.id}
                                       onClick={() => handleAssignAttendant(deal.id, att.id)}
                                     >
                                       <Avatar className="w-4 h-4 mr-2">
-                                        <AvatarImage src={att.avatar} />
+                                        <AvatarImage src={att.avatar_url} />
                                       </Avatar>
                                       {att.name}
                                     </DropdownMenuItem>
@@ -302,23 +207,18 @@ export default function CRM() {
                               </DropdownMenu>
                             )}
                           </div>
-
-                          <p className="text-xs text-muted-foreground mb-3">{deal.procedure}</p>
-
+                          <p className="text-xs text-muted-foreground mb-3">
+                            {deal.procedure_name}
+                          </p>
                           <div className="flex items-center justify-between text-xs font-medium">
                             <div className="flex items-center text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
-                              <Calendar className="w-3 h-3 mr-1" />
-                              {deal.date}
+                              <Calendar className="w-3 h-3 mr-1" /> {deal.phone || 'Sem contato'}
                             </div>
-
                             {currentUser.role !== 'clinical' ? (
                               attendantUser ? (
-                                <div
-                                  className="flex items-center gap-1 bg-primary/10 text-primary px-1.5 py-0.5 rounded-md"
-                                  title={`Atendente: ${attendantUser.name}`}
-                                >
+                                <div className="flex items-center gap-1 bg-primary/10 text-primary px-1.5 py-0.5 rounded-md">
                                   <Avatar className="w-4 h-4">
-                                    <AvatarImage src={attendantUser.avatar} />
+                                    <AvatarImage src={attendantUser.avatar_url} />
                                   </Avatar>
                                   <span className="text-[10px]">{attendantUser.name}</span>
                                 </div>
@@ -329,7 +229,7 @@ export default function CRM() {
                                 </div>
                               )
                             ) : (
-                              <div className="flex items-center text-primary bg-primary/10 px-2 py-1 rounded-md cursor-pointer hover:bg-primary/20 transition-colors">
+                              <div className="flex items-center text-primary bg-primary/10 px-2 py-1 rounded-md cursor-pointer hover:bg-primary/20">
                                 <Activity className="w-3 h-3 mr-0.5" /> Ficha
                               </div>
                             )}
@@ -338,12 +238,9 @@ export default function CRM() {
                       </Card>
                     )
                   })}
-
                   {stageDeals.length === 0 && (
                     <div className="flex items-center justify-center h-24 text-sm text-muted-foreground/50 border border-dashed rounded-lg">
-                      {currentUser.role === 'clinical'
-                        ? 'Sem agendamentos'
-                        : 'Arraste pacientes para cá'}
+                      Arraste pacientes para cá
                     </div>
                   )}
                 </div>

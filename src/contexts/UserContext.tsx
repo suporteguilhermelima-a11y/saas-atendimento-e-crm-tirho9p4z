@@ -1,69 +1,81 @@
-import { createContext, useContext, useState, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { useAuth } from '@/hooks/use-auth'
+import { supabase } from '@/lib/supabase/client'
 
-export type Role = 'admin' | 'operational' | 'clinical'
+export type UserRole = 'admin' | 'operational' | 'clinical'
 
-export type User = {
+export interface UserProfile {
   id: string
   name: string
-  role: Role
-  title: string
-  avatar: string
+  role: UserRole
+  avatar_url?: string
+  email?: string
 }
 
-export const TEAM: User[] = [
-  {
-    id: 'laisa',
-    name: 'Dra. Laisa Chimello',
-    role: 'admin',
-    title: 'Médica / Admin',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=24',
-  },
-  {
-    id: 'beatriz',
-    name: 'Beatriz',
-    role: 'admin',
-    title: 'Gerente',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=25',
-  },
-  {
-    id: 'ana',
-    name: 'Ana',
-    role: 'operational',
-    title: 'Gerente Comercial',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=26',
-  },
-  {
-    id: 'natalia',
-    name: 'Natalia',
-    role: 'operational',
-    title: 'Secretária',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=27',
-  },
-  {
-    id: 'paola',
-    name: 'Dra. Paola',
-    role: 'clinical',
-    title: 'Médica',
-    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=28',
-  },
-]
-
-type UserContextType = {
-  currentUser: User
-  setCurrentUser: (user: User) => void
+interface UserContextType {
+  currentUser: UserProfile
+  setCurrentUser: (user: UserProfile) => void
+  team: UserProfile[]
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
 
-export function UserProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<User>(TEAM[0])
+export const UserProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuth()
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
+  const [team, setTeam] = useState<UserProfile[]>([])
+
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => {
+          if (data) {
+            setCurrentUser({
+              id: data.id,
+              name: data.name,
+              role: data.role as UserRole,
+              avatar_url: data.avatar_url || '',
+              email: data.email,
+            })
+          }
+        })
+      supabase
+        .from('profiles')
+        .select('*')
+        .then(({ data }) => {
+          if (data) {
+            setTeam(
+              data.map((p) => ({
+                id: p.id,
+                name: p.name,
+                role: p.role as UserRole,
+                avatar_url: p.avatar_url || '',
+                email: p.email,
+              })),
+            )
+          }
+        })
+    } else {
+      setCurrentUser(null)
+      setTeam([])
+    }
+  }, [user])
+
+  const defaultUser: UserProfile = { id: '0', name: 'Carregando...', role: 'operational' }
+
   return (
-    <UserContext.Provider value={{ currentUser, setCurrentUser }}>{children}</UserContext.Provider>
+    <UserContext.Provider value={{ currentUser: currentUser || defaultUser, setCurrentUser, team }}>
+      {children}
+    </UserContext.Provider>
   )
 }
 
-export function useUser() {
+export const useUser = () => {
   const context = useContext(UserContext)
-  if (!context) throw new Error('useUser must be used within UserProvider')
+  if (!context) throw new Error('useUser must be used within a UserProvider')
   return context
 }
