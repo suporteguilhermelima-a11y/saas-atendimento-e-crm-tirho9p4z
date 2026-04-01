@@ -4,7 +4,8 @@ import { createClient } from 'jsr:@supabase/supabase-js@2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, x-supabase-client-platform, apikey, content-type',
 }
 
 Deno.serve(async (req: Request) => {
@@ -32,13 +33,13 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ success: true, count: 0 }), { headers: corsHeaders })
     }
 
-    const idsToUpdate = unreadMsgs.map(m => m.id)
+    const idsToUpdate = unreadMsgs.map((m) => m.id)
     await supabase.from('messages').update({ is_read: true, status: 'read' }).in('id', idsToUpdate)
 
     let evoUrl = Deno.env.get('EVOLUTION_API_URL')
     let evoKey = Deno.env.get('EVOLUTION_API_KEY')
     let instanceName = Deno.env.get('EVOLUTION_INSTANCE_NAME') || 'crm'
-    
+
     const { data: integ } = await supabase
       .from('user_integrations')
       .select('evolution_api_url, evolution_api_key, instance_name')
@@ -60,59 +61,66 @@ Deno.serve(async (req: Request) => {
           evoUrl = parsed.url || parsed.apiUrl || evoUrl
           evoKey = parsed.apiKey || parsed.apikey || parsed.globalapikey || evoKey
           instanceName = parsed.instanceName || parsed.instance || instanceName
-        } catch(e) {}
+        } catch (e) {}
       } else if (adaptaSkip.includes(',')) {
-         const parts = adaptaSkip.split(',')
-         if (parts[0].startsWith('http')) {
-             evoUrl = parts[0].trim()
-             evoKey = parts[1]?.trim() || evoKey
-             instanceName = parts[2]?.trim() || instanceName
-         } else {
-             evoKey = parts[0].trim()
-         }
+        const parts = adaptaSkip.split(',')
+        if (parts[0].startsWith('http')) {
+          evoUrl = parts[0].trim()
+          evoKey = parts[1]?.trim() || evoKey
+          instanceName = parts[2]?.trim() || instanceName
+        } else {
+          evoKey = parts[0].trim()
+        }
       } else if (adaptaSkip.includes('|')) {
-         const parts = adaptaSkip.split('|')
-         if (parts[0].startsWith('http')) {
-             evoUrl = parts[0].trim()
-             evoKey = parts[1]?.trim() || evoKey
-             instanceName = parts[2]?.trim() || instanceName
-         } else {
-             evoKey = parts[0].trim()
-         }
+        const parts = adaptaSkip.split('|')
+        if (parts[0].startsWith('http')) {
+          evoUrl = parts[0].trim()
+          evoKey = parts[1]?.trim() || evoKey
+          instanceName = parts[2]?.trim() || instanceName
+        } else {
+          evoKey = parts[0].trim()
+        }
       } else if (adaptaSkip.startsWith('http')) {
-          evoUrl = adaptaSkip
+        evoUrl = adaptaSkip
       } else {
-          evoKey = adaptaSkip
+        evoKey = adaptaSkip
       }
     }
 
     if (evoUrl && evoKey) {
       let cleanPhone = deal.phone.replace(/\D/g, '')
       if (cleanPhone.length === 10 || cleanPhone.length === 11) cleanPhone = `55${cleanPhone}`
-      
+
       const cleanUrl = evoUrl.replace(/\/$/, '')
-      
-      const messagesToRead = unreadMsgs.filter(m => m.wa_message_id).map(m => ({
-        remoteJid: `${cleanPhone}@s.whatsapp.net`,
-        fromMe: false,
-        id: m.wa_message_id
-      }))
+
+      const messagesToRead = unreadMsgs
+        .filter((m) => m.wa_message_id)
+        .map((m) => ({
+          remoteJid: `${cleanPhone}@s.whatsapp.net`,
+          fromMe: false,
+          id: m.wa_message_id,
+        }))
 
       if (messagesToRead.length > 0) {
         await fetch(`${cleanUrl}/chat/markMessageAsRead/${instanceName}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'apikey': evoKey as string,
-            'globalapikey': evoKey as string
+            apikey: evoKey as string,
+            globalapikey: evoKey as string,
           },
-          body: JSON.stringify({ readMessages: messagesToRead })
-        }).catch(err => console.error('Failed to mark read in Evo API:', err))
+          body: JSON.stringify({ readMessages: messagesToRead }),
+        }).catch((err) => console.error('Failed to mark read in Evo API:', err))
       }
     }
 
-    return new Response(JSON.stringify({ success: true, count: idsToUpdate.length }), { headers: corsHeaders })
+    return new Response(JSON.stringify({ success: true, count: idsToUpdate.length }), {
+      headers: corsHeaders,
+    })
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: corsHeaders })
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: corsHeaders,
+    })
   }
 })
