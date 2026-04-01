@@ -1,6 +1,6 @@
 {
   "_versions": {
-    "evolution-webhook": 16,
+    "evolution-webhook": 17,
     "evolution-send": 15,
     "evolution-mark-read": 10,
     "create-user": 9,
