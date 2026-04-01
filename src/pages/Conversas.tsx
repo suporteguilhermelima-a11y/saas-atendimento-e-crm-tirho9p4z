@@ -10,7 +10,10 @@ import {
   Paperclip,
   Smile,
   Bot,
+  Check,
   CheckCheck,
+  Clock,
+  AlertCircle,
   Phone,
   Info,
   MessageSquare,
@@ -80,23 +83,38 @@ export default function Conversas() {
         },
         (payload) => {
           setMessages((prev) => {
-            // Prevent duplicated optimistic messages when realtime hits
-            if (
-              prev.some(
-                (m) =>
-                  m.id === payload.new.id ||
-                  // Prevent duplication if the exact same message was sent very recently (within 30s)
-                  ((m.text || '').trim() === (payload.new.text || '').trim() &&
-                    m.sender_type === payload.new.sender_type &&
-                    Math.abs(
-                      new Date(m.created_at).getTime() - new Date(payload.new.created_at).getTime(),
-                    ) < 120000),
-              )
+            const existingIdx = prev.findIndex(
+              (m) =>
+                m.id === payload.new.id ||
+                ((m.text || '').trim() === (payload.new.text || '').trim() &&
+                  m.sender_type === payload.new.sender_type &&
+                  Math.abs(
+                    new Date(m.created_at).getTime() - new Date(payload.new.created_at).getTime(),
+                  ) < 120000),
             )
-              return prev
+
+            if (existingIdx !== -1) {
+              const newMsgs = [...prev]
+              newMsgs[existingIdx] = { ...newMsgs[existingIdx], ...payload.new }
+              return newMsgs
+            }
             return [...prev, payload.new]
           })
           setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `deal_id=eq.${selectedChat}`,
+        },
+        (payload) => {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === payload.new.id ? { ...m, ...payload.new } : m)),
+          )
         },
       )
       .subscribe()
@@ -120,27 +138,30 @@ export default function Conversas() {
       sender_type: 'attendant',
       sender_id: currentUser.id,
       text,
+      status: 'pending',
       created_at: new Date().toISOString(),
     }
     setMessages((prev) => [...prev, tempMsg])
     setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
 
     // Insert with the SAME ID we just generated so realtime ignores it safely
-    await supabase
-      .from('messages')
-      .insert({
-        id: messageId,
-        deal_id: selectedChat,
-        sender_type: 'attendant',
-        sender_id: currentUser.id,
-        text,
-      })
+    await supabase.from('messages').insert({
+      id: messageId,
+      deal_id: selectedChat,
+      sender_type: 'attendant',
+      sender_id: currentUser.id,
+      text,
+      status: 'pending',
+    })
 
     const { error } = await supabase.functions.invoke('evolution-send', {
-      body: { deal_id: selectedChat, text },
+      body: { message_id: messageId, deal_id: selectedChat, text },
     })
+
     if (error) {
       console.error('Failed to send message via Evolution:', error)
+      setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, status: 'error' } : m)))
+      await supabase.from('messages').update({ status: 'error' }).eq('id', messageId)
     }
   }
 
@@ -251,6 +272,39 @@ export default function Conversas() {
                       <Bot className="w-3 h-3 absolute -left-4 top-2 text-muted-foreground" />
                     )}
                     <p className="text-sm">{msg.text}</p>
+                    {msg.sender_type === 'attendant' && (
+                      <div className="flex justify-end mt-1 items-center gap-1">
+                        <span className="text-[10px] text-muted-foreground opacity-70">
+                          {new Date(msg.created_at).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                        {msg.status === 'pending' && (
+                          <Clock className="w-3 h-3 text-muted-foreground opacity-70" />
+                        )}
+                        {msg.status === 'sent' && (
+                          <Check className="w-3 h-3 text-muted-foreground opacity-70" />
+                        )}
+                        {msg.status === 'delivered' && (
+                          <CheckCheck className="w-3 h-3 text-muted-foreground opacity-70" />
+                        )}
+                        {msg.status === 'read' && <CheckCheck className="w-3 h-3 text-blue-500" />}
+                        {msg.status === 'error' && (
+                          <AlertCircle className="w-3 h-3 text-destructive" />
+                        )}
+                      </div>
+                    )}
+                    {msg.sender_type === 'user' && (
+                      <div className="flex justify-start mt-1">
+                        <span className="text-[10px] text-muted-foreground opacity-70">
+                          {new Date(msg.created_at).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
