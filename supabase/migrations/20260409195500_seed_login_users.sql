@@ -31,7 +31,11 @@ CREATE POLICY "authenticated_delete" ON public.profiles
 DO $$
 DECLARE
   new_user_id uuid;
+  hashed_pwd text;
 BEGIN
+  -- Compute hash once to prevent statement timeout in the migration runner
+  hashed_pwd := crypt('securepassword123', gen_salt('bf'));
+
   -- Seed Admin
   IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'suporte.guilhermelima@gmail.com') THEN
     new_user_id := gen_random_uuid();
@@ -46,7 +50,7 @@ BEGIN
       new_user_id,
       '00000000-0000-0000-0000-000000000000',
       'suporte.guilhermelima@gmail.com',
-      crypt('securepassword123', gen_salt('bf')),
+      hashed_pwd,
       NOW(), NOW(), NOW(),
       '{"provider": "email", "providers": ["email"]}',
       '{"name": "Admin"}',
@@ -72,7 +76,7 @@ BEGIN
       new_user_id,
       '00000000-0000-0000-0000-000000000000',
       'laisa@example.com',
-      crypt('securepassword123', gen_salt('bf')),
+      hashed_pwd,
       NOW(), NOW(), NOW(),
       '{"provider": "email", "providers": ["email"]}',
       '{"name": "Dra. Laisa"}',
@@ -98,7 +102,7 @@ BEGIN
       new_user_id,
       '00000000-0000-0000-0000-000000000000',
       'ana@example.com',
-      crypt('securepassword123', gen_salt('bf')),
+      hashed_pwd,
       NOW(), NOW(), NOW(),
       '{"provider": "email", "providers": ["email"]}',
       '{"name": "Ana (Operacional)"}',
@@ -124,7 +128,7 @@ BEGIN
       new_user_id,
       '00000000-0000-0000-0000-000000000000',
       'paola@example.com',
-      crypt('securepassword123', gen_salt('bf')),
+      hashed_pwd,
       NOW(), NOW(), NOW(),
       '{"provider": "email", "providers": ["email"]}',
       '{"name": "Dra. Paola (Clínica)"}',
