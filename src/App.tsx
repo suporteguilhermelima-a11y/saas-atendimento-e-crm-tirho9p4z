@@ -11,6 +11,7 @@ import Conversas from './pages/Conversas'
 import CRM from './pages/CRM'
 import Automacoes from './pages/Automacoes'
 import Templates from './pages/Templates'
+import Agentes from './pages/Agentes'
 import NotFound from './pages/NotFound'
 import Login from './pages/Login'
 
@@ -42,6 +43,7 @@ const AppRoutes = () => {
         <Route path="/crm" element={<CRM />} />
         <Route path="/templates" element={<Templates />} />
         <Route path="/automacoes" element={<Automacoes />} />
+        <Route path="/agentes" element={<Agentes />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
